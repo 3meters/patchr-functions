@@ -1,0 +1,33 @@
+{
+  "name": "patchr-firebase",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Patchr Firebase Security",
+  "author": {
+    "name": "3meters Engineering",
+    "email": "dev@3meters.com>"
+  },
+  "contributors": [
+    {
+      "name": "Jay Massena",
+      "email": "jay@3meters.com"
+    }
+  ],
+  "dependencies": {
+    "async": "*",
+    "firebase-admin": "*",
+    "geofire": "^4.1.1",
+    "lodash": "*",
+    "sendgrid": "*",
+    "btoa": "*"
+  },
+  "repository": "git://github.com:3meters/patchr-functions",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --recursive --ui bdd --reporter spec"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "targaryen": "^3.0.1"
+  }
+}

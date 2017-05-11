@@ -1,0 +1,716 @@
+// ----------------------------------------------------------------------------
+// Paths
+// ----------------------------------------------------------------------------
+path / {
+    read() { isWorker() }
+    write() { isWorker() }
+}
+path /channel-names/{groupId} {
+    read() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid)}
+}
+path /channel-names/{groupId}/{name} is PatchrKey {
+    create() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && !isGroupRoleGuest(groupId, auth.uid)}
+    delete() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && !isGroupRoleGuest(groupId, auth.uid)}
+}
+path /clients is Clients {
+    read() { true }     // We don't need a logged in user to check the client requirements
+    write() { false }   // Update using firebase console
+}
+path /counters/{userId} {
+    read() { isCurrentUser(userId)}
+}
+path /counters/{userId}/unreads is Number {
+}
+path /group-channel-members/{groupId}/{channelId} {
+    read() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && 
+            (isChannelPublic(groupId, channelId) || 
+                isChannelMember(groupId, channelId, auth.uid))}
+}
+path /group-channel-members/{groupId}/{channelId}/{userId} is ChannelMember {
+    /* - Create: channel members only be added by a channel member or channel creator (direct or delegated via invite)
+       - Update: worker, owner and channel owner can update
+       - Delete: worker, owner, and channel owner (as part of group/channel delete) can delete */
+    create() { 
+        isLoggedIn() &&
+        isChannelOwner(groupId, channelId, auth.uid) ||
+            (this.invite_id != null && hasValidChannelInvite(groupId, channelId, this.invited_by, this.invite_id) && this.role == "member") ||
+                (isChannelPublic(groupId, channelId) && isGroupMember(groupId, auth.uid))}
+    update() { 
+        isLoggedIn() && ((isCreatorOf(this) && this.role == prior(this.role)) ||
+            isChannelOwner(groupId, channelId, auth.uid) || 
+            isGroupOwner(groupId, auth.uid))}
+    delete() { 
+        isLoggedIn() && (isCreatorOf(this) || 
+            isChannelOwner(groupId, channelId, auth.uid) || 
+            isGroupOwner(groupId, auth.uid))}
+}
+path /group-channels/{groupId} {
+    /* Read needed for:
+       - Verify that channelName is not already being used (when creating a channel).
+       - Find general channel.
+       - Full text search for group channels by name (picker for invites, channel search).
+       Guest members cannot create channels so they are excluded. 
+       This read rule will make it possible for any group member to see private 
+       channel properties like purpose, photo, etc, even if the caller is not a 
+       member (but not messages). */
+    read() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && 
+        (isGroupRoleOwner(groupId, auth.uid) || isGroupRoleMember(groupId, auth.uid))}
+}
+path /group-channels/{groupId}/{channelId} is Channel {
+    /* - Create: any group member or owner can create a channel (not guests)
+       - Read: combines with parent rule to allow guests to read channels they belong to.
+       - Update: only channel owner can update the channel 
+       - Delete: only channel owner can delete the channel */
+    create() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && !isGroupRoleGuest(groupId, auth.uid)}
+    /* Allow guests to read channels they belong to */
+    read() {    
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && 
+        isChannelMember(groupId, channelId, auth.uid)}
+    update() { 
+        isLoggedIn() && isChannelOwner(groupId, channelId, auth.uid)}
+}
+path /group-members/{groupId} {
+    /* - Read: any group member can read */
+    read() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid)}
+}
+path /group-members/{groupId}/{userId} is GroupMember {
+  /* Join: only using invite from a group member.
+   * Join: group primary owner can self join without an invite. 
+   * Update: worker, owner and group owner
+   * Delete: worker, owner and group owner (as part of group delete) */
+    create() { 
+        isLoggedIn() && 
+        (isGroupOwner(groupId, auth.uid) || 
+            hasValidGroupInvite(groupId, this.invited_by, this.invite_id, this.role))}
+    update() { 
+        isLoggedIn() && ((isCreatorOf(this) && this.role == prior(this.role)) || isGroupOwner(groupId, auth.uid))}
+    delete() { 
+        isLoggedIn() && (isCreatorOf(this) || isGroupOwner(groupId, auth.uid))}
+}
+path /group-messages/{groupId}/{channelId} {
+    /* - Read: any group member can read open channel messages
+       - Read: any channel member can read private channel messages */
+    read() { 
+        isLoggedIn() && 
+        isGroupMember(groupId, auth.uid) && 
+        (isChannelPublic(groupId, channelId) || 
+            isChannelMember(groupId, channelId, auth.uid))
+    }
+}
+path /group-messages/{groupId}/{channelId}/{messageId} is Message {
+    /* - Create: any channel member can create a message
+       - Update: only message creator can update the channel 
+       - Delete: only message creator can delete the channel */
+    create() { 
+        isLoggedIn() && isChannelMember(groupId, channelId, auth.uid) && 
+        !isChannelRoleVisitor(groupId, channelId, auth.uid) }
+    update() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid) && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid) && 
+        (isCreatorOf(this) || isChannelOwner(groupId, channelId, auth.uid))}    
+}
+path /group-messages/{groupId}/{channelId}/{messageId}/reactions is Reactions {
+    write() { 
+        isLoggedIn() && isChannelMember(groupId, channelId, auth.uid) }
+}
+path /groups/{groupId} is Group {
+    /* - Read: any group member can read 
+       - Create: any user can create
+       - Update: only group owner can update
+       - Delete: only group owner can delete */
+    create() { 
+        isLoggedIn() && this.owned_by == auth.uid && this.created_by == auth.uid && this.modified_by == auth.uid }
+    read() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid) }
+    update() { 
+        isLoggedIn() && isGroupOwner(groupId, auth.uid)}
+}
+path /installs/{userId} is Map<String, Boolean> {
+    write() { isCurrentUser(userId) }
+}
+path /invites/{groupId}/{userId} {
+    read() { isCurrentUser(userId) }
+}
+path /invites/{groupId}/{userId}/{inviteId} is Invite {
+    update() { 
+        isLoggedIn() && currentUserIsInviter(this) && 
+        (prior(this.status) == this.status || prior(this.status == "pending")) }
+    delete() { 
+        isLoggedIn() && currentUserIsInviter(this)}
+}
+path /member-channels/{userId} {
+    read() { isCurrentUser(userId)}
+}
+path /member-channels/{userId}/{groupId} {
+    read() { isGroupOwner(groupId, auth.uid)}
+}
+path /member-channels/{userId}/{groupId}/{channelId} is ChannelMember {
+    /* Join: must already be a member in group-channel-members.
+     * Update: worker and channel owner, member if not updating role.
+     * Delete: worker, owner, and channel owner (as part of group/channel delete) */
+    create() { 
+        isLoggedIn() && isChannelMember(groupId, channelId, auth.uid)}
+    read() { isChannelOwner(groupId, channelId, auth.uid)}
+    update() { 
+        isLoggedIn() && ((isCreatorOf(this) && this.role == prior(this.role)) ||
+            isChannelOwner(groupId, channelId, auth.uid) || 
+            isGroupOwner(groupId, auth.uid))}
+    delete() { 
+        isLoggedIn() && (isCreatorOf(this) || 
+            isChannelOwner(groupId, channelId, auth.uid) || 
+            isGroupOwner(groupId, auth.uid))}
+}
+path /member-groups/{userId} {
+    read() { isCurrentUser(userId) }
+}
+path /member-groups/{userId}/{groupId} is GroupMember {
+  /* Join: must already be a member in group-members.
+   * Update: worker, owner and group owner
+   * Delete: worker, owner and group owner (as part of group delete) */
+    create() { 
+        isLoggedIn() && isGroupMember(groupId, auth.uid)}
+    update() { 
+        isLoggedIn() && ((isCreatorOf(this) && this.role == prior(this.role)) || isGroupOwner(groupId, auth.uid))}
+    delete() { 
+        isLoggedIn() && (isCreatorOf(this) || isGroupOwner(groupId, auth.uid))}
+}
+path /queue/clear-unreads/{taskId} is ClearUnreadsTask {
+    create() { isLoggedIn() && this.created_by == auth.uid }    
+    delete() { isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/create-user/{taskId} is CreateUserTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/join-group/{taskId} is JoinGroupTask {
+    /* Join group just needs to be an authenticated user linked to the request */
+    create() { isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) || 
+            this.user_id == auth.uid && hasValidInvite(this.group_id, this.invited_by, this.invite_id))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/deletes/{taskId} is DeleteTask {
+    /* Delete must have owner privileges for the group or channel */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) ||
+            (this.target == "channel" && isChannelOwner(this.group_id, this.channel_id, this.created_by)))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/invites/{taskId} is InviteTask {
+    /* Inviter must be a current user and current member of the group */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && this.inviter.id  == auth.uid && 
+        isGroupMember(this.group.id, this.inviter.id) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/notifications/{taskId} is NotificationTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && 
+        isGroupMember(this.group_id, this.created_by) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/update-username/{taskId} is UpdateUsernameTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /typing/{groupId}/{channelId} {
+    read() { 
+        isLoggedIn() && isChannelMember(groupId, channelId, auth.uid) }
+}
+path /typing/{groupId}/{channelId}/{userId} is UserName {
+    write() { 
+        isCurrentUser(userId) && isChannelMember(groupId, channelId, auth.uid) }
+}
+path /unreads/{userId} {
+    read() { isCurrentUser(userId) }
+}
+path /unreads/{userId}/{groupId}/{channelId} {
+    delete() { isCurrentUser(userId) }
+}
+path /unreads/{userId}/{groupId}/{channelId}/{messageId} is Boolean {
+    delete() { isCurrentUser(userId) }
+}
+path /usernames/{username} is AnyKey {
+    read() { isLoggedIn() }
+}
+path /users/{userId} is User {
+    /* Any user can read, only worker can write */
+    read() { isLoggedIn()}
+}
+path /users/{userId}/profile is Profile {
+    write() { isCurrentUser(userId) && isCreatorOf(this.parent())}
+}
+path /users/{userId}/presence {
+    write() { isCurrentUser(userId) && isCreatorOf(this.parent())}
+}
+// ----------------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------------
+type InitialTimestamp extends Number {
+  validate() { initial(this, now) }
+}
+type InitialTimestampInverted extends Number {
+  validate() { initial(this, -now) }
+}
+type CurrentTimestamp extends Number {
+    validate() { this == now }
+}
+type Timestamp extends Number {
+    validate() { this <= (now + 3600000) } // add one hour as buffer
+}
+type TimestampInverted extends Number {
+    validate() { this >= -(now + 3600000) } // add one hour as buffer
+}
+type AnyKey extends String {
+    validate() { this.length == 28 || this.length == 12 }    
+}
+type AutoKey extends String {
+    validate() { this.length == 20 }
+}
+type PatchrKey extends String {
+    validate() { this.length == 12 }
+}
+type EmailString extends String {
+    validate() { this.length <= 256 }
+}
+type UrlString extends String {
+    validate() { this.length <= 256 }
+}
+type ValueString extends String {
+    validate() { this.length <= 50 }
+}
+type TokenString extends String {
+    validate() { this.length <= 256 }
+}
+type TitleString extends String {
+    validate() { this.length <= 200 }  // Roughly a page
+}
+type DescriptionString extends String {
+    validate() { this.length <= 4000 }  // Roughly a page
+}
+type BodyString extends String {
+    validate() { this.length <= 4000 }  // Roughly a page
+}
+type UserName extends String {
+    validate() { this.length > 2 && this.length <= 21 && this == this.toLowerCase() }
+}
+type ChannelName extends String {
+    validate() { this.length > 2 && this.length <= 50 && this == this.toLowerCase() }
+}
+type ImageFileName extends String {
+    validate() { this.endsWith(".jpg") && this.length <= 100 }
+}
+type GroupRole extends String {
+    validate() { this == "owner" || this == "member" || this == "guest" }
+}
+type ReactionType extends String {
+    validate() { 
+        this == ":thumbsup:" || 
+        this == ":thumbsdown:" ||
+        this == ":grinning:" ||
+        this == ":tada:" ||
+        this == ":clap:" ||
+        this == ":100:" ||
+        this == ":poop:" ||
+        this == ":confused:" ||
+        this == ":heart:" ||        
+        this == ":smiley_cat:" ||
+        this == ":smiling_imp:" ||
+        this == ":muscle:" ||
+        this == ":zzz:" ||
+        this == ":cocktail:" ||
+        this == ":trophy:" ||
+        this == ":fireworks:" ||
+        this == ":gift:" ||
+        this == ":astonished:" ||
+        this == ":drooling_face:" ||
+        this == ":sleeping:" ||
+        this == ":yum:" ||
+        this == ":laughing:" ||
+        this == ":heart_eyes:" ||
+        this == ":bulb:"
+    }
+}
+type ChannelRole extends String {
+    validate() { this == "owner" || this == "member" || this == "visitor" }
+}
+type Notifications extends String {
+    validate() { this == "all" || this == "direct_only" || this == "none" }
+}
+type InviteStatus extends String {
+    validate() { this == "pending" || this == "accepted" }
+}
+type Visibility extends String {
+    validate() { this == "open" || this == "private" }
+}
+type PhotoSource extends String {
+    validate() { this == "aircandi.images" }
+}
+type MessageSource extends String {
+    validate() { this == "system" || this == "user" }
+}
+type ChannelType extends String {
+    validate() { this == "channel" || this == "messaging" }
+}
+type InviteType extends String {
+    validate() { this == "invite-members" || this == "invite-guests" || this == "invite-guests-multi-channel" }
+}
+type TargetType extends String {
+    validate() { this == "user" || this == "group" || this == "channel"  || this == "message" }
+}
+type Coordinate extends Map<String, Number> {
+    validate() { this["lat"] != null && this["lng"] != null }
+}
+type TaskState extends String {
+    validate() { this == "waiting" || this == "processing" || this == "error" || this == "finished" }    
+}
+type Reactions extends Map<ReactionType, Map<AnyKey, Boolean>> {
+    // Convenience type
+}
+type InviteGroup {
+    id: PatchrKey,
+    title: TitleString
+}
+type Inviter {
+    email: EmailString,
+    id: AnyKey,
+    title: TitleString,
+    username: UserName
+}
+type Error {
+    validate() { 
+        this.message.length <= 256 
+    }
+    code: Number,
+    message: String,
+}
+type Attachment {
+    photo: Photo
+}
+type Photo {
+    filename: ImageFileName,
+    height: Number|Null,
+    source: PhotoSource,
+    taken_at: Timestamp|Null,
+    width: Number|Null,
+    uploading: Boolean|Null,
+    location: Coordinate|Null,
+}
+type Profile {
+    first_name: ValueString|Null,
+    last_name: ValueString|Null,
+    full_name: ValueString|Null,
+    phone: ValueString|Null,
+    photo: Photo|Null
+}
+type Clients {
+    ios: Number
+}
+type Counters {
+    unreads: Number|Null
+}
+type Channel {
+    validate() { root["channel-names"][this.group_id][this.name] == null || 
+        root["channel-names"][this.group_id][this.name] == key() }
+    archived: Boolean|Null,
+    created_at: Timestamp,
+    created_by: AnyKey,
+    general: Boolean,
+    group_id: PatchrKey,
+    modified_at: Timestamp|Null,
+    modified_by: AnyKey|Null,
+    name: ChannelName,
+    owned_by: AnyKey,
+    photo: Photo|Null,
+    purpose: DescriptionString|Null,
+    topic: TitleString|Null,
+    type: ChannelType|Null,
+    visibility: Visibility,    
+}
+type ChannelMember {
+    archived: Boolean|Null,
+    created_at: Timestamp,
+    created_by: AnyKey,
+    index_priority_joined_at: Number|Null,
+    index_priority_joined_at_desc: Number|Null,
+    invite_id: PatchrKey|Null,
+    invited_by: AnyKey|Null,
+    joined_at: Number|Null,
+    joined_at_desc: Number|Null,
+    muted: Boolean,
+    priority: Number|Null,
+    role: ChannelRole,          
+    starred: Boolean|Null,
+}
+type GroupMember {
+    created_at: Timestamp,
+    created_by: AnyKey,
+    disabled: Boolean,
+    email: EmailString|Null,
+    index_priority_joined_at: Number|Null,
+    index_priority_joined_at_desc: Number|Null,
+    invite_id: PatchrKey|Null,
+    invited_by: AnyKey|Null,
+    joined_at: Number|Null,
+    joined_at_desc: Number|Null,
+    notifications: Notifications,
+    priority: Number|Null,
+    role: GroupRole,          
+}
+type Group {
+    created_at: Timestamp,
+    created_by: AnyKey,
+    default_channels: PatchrKey[]|Null,
+    modified_at: Timestamp,
+    modified_by: AnyKey,
+    owned_by: AnyKey,
+    photo: Photo|Null,
+    title: TitleString
+}
+type Invite {
+    accepted_at: Timestamp|Null,
+    accepted_by: AnyKey|Null,
+    channels: Map<PatchrKey, String>|Null,
+    created_at: Timestamp,
+    created_by: AnyKey,
+    email: EmailString,    
+    group: InviteGroup,
+    invited_at: Timestamp,
+    invited_at_desc: TimestampInverted,
+    inviter: Inviter,
+    link: UrlString,
+    role: GroupRole,
+    status: InviteStatus
+}
+type Message {
+    attachments: Map<PatchrKey, Attachment>|Null,
+    channel_id: PatchrKey,
+    created_at: Timestamp,
+    created_at_desc: TimestampInverted,
+    created_by: AnyKey,
+    group_id: PatchrKey,
+    modified_at: Timestamp,
+    modified_by: AnyKey,
+    reactions: Reactions|Null,
+    source: MessageSource|Null,
+    text: BodyString|Null
+}
+type User {
+    validate() { root["usernames"][this.username] == null || 
+        root["usernames"][this.username] == key() }
+    presence: Boolean|Number|Null,
+    created_at: Timestamp,
+    created_by: AnyKey,
+    modified_at: Timestamp,
+    username: UserName,
+    developer: Boolean|Null,
+    profile: Profile|Null
+}
+type Task {
+    validate() {this.id == key()}
+    created_at: Timestamp,
+    created_by: AnyKey,
+    error: Object|Null,
+    result: Any|Null,
+    id: AutoKey,
+    retain: Boolean|Null,
+    state: TaskState,
+}
+type ClearUnreadsTask extends Task {
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+    message_id: AutoKey|Null,
+    target: TargetType,
+}
+type CreateUserTask extends Task {
+    user_id: AnyKey,
+    username: UserName,
+}
+type UpdateUsernameTask extends Task {
+    user_id: AnyKey,
+    username: UserName,
+}
+type DeleteTask extends Task {
+    validate() { this.target != "channel" || this.channel_id != null }
+    target: TargetType,
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+}
+type InviteTask extends Task {
+    channels: Map<PatchrKey, String>|Null,
+    group: InviteGroup,
+    inviter: Inviter,
+    invite_id: PatchrKey,
+    link: UrlString,
+    recipient: EmailString,
+    type: InviteType,
+}
+type JoinGroupTask extends Task {
+    channels: Map<PatchrKey, String>|Null,  // used if no invite
+    group_id: PatchrKey,                    // used if no invite
+    invite_id: PatchrKey|Null,
+    invited_by: AnyKey|Null,
+    role: GroupRole,                        // used if no invite
+    user_id: AnyKey,
+    email: EmailString|Null,
+}
+type NotificationTask extends Task {
+    channel_id: PatchrKey,
+    channelName: ChannelName,
+    group_id: PatchrKey,
+    username: UserName,
+    text: BodyString|Null,
+    photo: Photo|Null,
+}
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+function isLoggedIn() { 
+    return auth != null 
+}
+function isCurrentUser(userId) {
+    return isLoggedIn() && auth.uid == userId
+}
+function isWorker() {
+    return isLoggedIn() && auth.uid == "patchr-cloud-worker"
+}
+function isCreatorOf(value) {
+    return prior(value).created_by == auth.uid
+}
+/* Groups */
+function isGroupMember(groupId, userId) {
+    return prior(root)["group-members"][groupId][userId] != null
+}
+function isGroupRoleOwner(groupId, userId) {
+    return isGroupMember(groupId, userId) &&
+        prior(root)["group-members"][groupId][userId].role == "owner"
+}
+function isGroupRoleMember(groupId, userId) {
+    return isGroupMember(groupId, userId) &&
+        prior(root)["group-members"][groupId][userId].role == "member"
+}
+function isGroupRoleGuest(groupId, userId) {
+    return isGroupMember(groupId, userId) &&
+        prior(root)["group-members"][groupId][userId].role == "guest"
+}
+function isGroupPrimaryOwner(groupId, userId) {
+    return prior(root)["groups"][groupId].owned_by == userId
+}
+function isGroupOwner(groupId, userId) {
+    return isGroupPrimaryOwner(groupId, userId) ||
+        isGroupRoleOwner(groupId, userId)
+}
+function isGroupCreator(groupId, userId) {
+    return prior(root)["groups"][groupId].created_by == userId
+}
+/* Channels */
+function isChannelMember(groupId, channelId, userId) {
+    return prior(root)["group-channel-members"][groupId][channelId][userId] != null
+}
+function isChannelRoleOwner(groupId, channelId, userId) {
+    return isChannelMember(groupId, channelId, userId) &&
+        prior(root)["group-channel-members"][groupId][channelId][auth.uid].role == "owner"
+}
+function isChannelRoleMember(groupId, channelId, userId) {
+    return isChannelMember(groupId, channelId, userId) &&
+        prior(root)["group-channel-members"][groupId][channelId][auth.uid].role == "member"
+}
+function isChannelRoleVisitor(groupId, channelId, userId) {
+    return isChannelMember(groupId, channelId, userId) &&
+        prior(root)["group-channel-members"][groupId][channelId][auth.uid].role == "visitor"
+}
+function isChannelPrimaryOwner(groupId, channelId, userId) {
+    return prior(root)["group-channels"][groupId][channelId].owned_by == userId
+}
+function isChannelOwner(groupId, channelId, userId) {
+    return isChannelPrimaryOwner(groupId, channelId, userId) ||
+        isChannelRoleOwner(groupId, channelId, userId)
+}
+function isChannelCreator(groupId, channelId, userId) {
+    return prior(root)["group-channels"][groupId][channelId].created_by == userId
+}
+function isChannelPublic(groupId, channelId) {
+    return prior(root)["group-channels"][groupId][channelId].visibility == "open"
+}
+function isChannelPrivate(groupId, channelId) {
+    return prior(root)["group-channels"][groupId][channelId].visibility == "private"
+}
+/* Invites */
+function currentUserIsInviter(invite) {
+    return prior(invite).inviter.id == auth.uid
+}
+function isChannelInvite(invite) {
+    return prior(invite).channels != null && prior(invite).channels.length > 0
+}
+function isGroupInvite(invite) {
+    return prior(invite).channels == null
+}
+function hasValidGroupInvite(groupId, inviterId, inviteId, role) {
+    return prior(root)["invites"][groupId][inviterId][inviteId] != null &&            // exists
+        prior(root)["invites"][groupId][inviterId][inviteId].group.id == groupId &&   // same group
+        prior(root)["invites"][groupId][inviterId][inviteId].role == role &&          // same role
+        prior(root)["invites"][groupId][inviterId][inviteId].status == "pending"      // hasn't already been used
+}
+function hasValidChannelInvite(groupId, channelId, inviterId, inviteId) {
+    return prior(root)["invites"][groupId][inviterId][inviteId] != null && 
+        prior(root)["invites"][groupId][inviterId][inviteId].group.id == groupId && 
+        prior(root)["invites"][groupId][inviterId][inviteId].channels[channelId] != null &&
+        prior(root)["invites"][groupId][inviterId][inviteId].status == "pending"      // hasn't already been used
+}
+function hasValidInvite(groupId, inviterId, inviteId) {
+    return prior(root)["invites"][groupId][inviterId][inviteId] != null && 
+        prior(root)["invites"][groupId][inviterId][inviteId].group.id == groupId && 
+        prior(root)["invites"][groupId][inviterId][inviteId].status == "pending"      // hasn't already been used
+}
+/* Utilities */
+function initial(value, init) { 
+    return value == (prior(value) == null ? init : prior(value)) 
+}
+// ----------------------------------------------------------------------------
+// Indexes: These get combined with read/write/validate for same path
+// ----------------------------------------------------------------------------
+path /users {
+    index() {["email"]}
+}
+path /member-groups/{userId} {
+    index() {["index_priority_joined_at_desc"]}
+}
+path /group-channels/{groupId} {
+    index() {["general", "name"]}
+}
+path /member-channels/{userId}/{groupId} {
+    index() {["index_priority_joined_at_desc"]}
+}

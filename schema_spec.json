@@ -1,0 +1,318 @@
+{
+  "clients": {
+    "android": 134,
+    "ios": 127
+  },
+  "channel-names": {
+    "$groupId": {
+      "$name": "$channelId"
+    }
+  },
+
+  "counters": {
+    "$user": {
+      "unreads": 5
+    }
+  },
+  "group-channel-members": {
+    "$channel": {
+      "$user": {
+        "muted": true // Convenience: duped from member-channels to support remote notifications
+      }
+    }
+  },
+  "group-channels": {
+    "$group": {
+      "$channel": {
+        "group": "$group",
+        "name": "top-secret", // 50 chars max, only lowercase|numbers|_-
+        "type": "channel|messaging", // use messaging for direct messaging
+        "visibility": "open|private", // messaging is always private
+        "purpose": "Discuss dad's retirement party",
+        "photo": {
+          "filename": "channel_photo.jpg",
+          "width": 600,
+          "height": 600,
+          "source": "aircandi.images",
+          "taken_at": 1472570145564
+        },
+        "general": false, // general channel can't be deleted
+        "archived": false, // Locked, doesn't show in channels for group, searchable' 
+        "created_by": "$user",
+        "created_at": 1452570145564
+      }
+    }
+  },
+  "group-members": {
+    "$group": {
+      "$user": {
+        "disabled": false, // used by owner
+        "hide_email": true,
+        "notifications": "all|none|direct_only",
+        "role": "owner|admin|member|guest",
+        "username": "jayminator", // optional: overrides user.username
+        "priority": 250, // 150=owner, 250=member, 350=guest
+        "joined_at": 1452570145,
+        "joined_at_desc": -1452570145,
+        "index_priority_joined_at": 2501452570145,
+        "index_priority_joined_at_desc": -2101452570145 // prepend priority reversed bucket
+      }
+    }
+  },
+  "group-messages": {
+    "$channel": {
+      "$message": {
+        "channel": "$channel",
+        "text": "When are you going to escape?", // optional
+        "attachments": { // optional
+          "$attachment1": {
+            "title": "Going all the way",
+            "photo": {
+              "filename": "$photo.jpg",
+              "width": 600,
+              "height": 600,
+              "source": "aircandi.images",
+              "taken_at": 1472570145564
+            }
+          },
+          "$attachment2": {
+            "animated": {
+              "filename": "$animated.gif",
+              "width": 600,
+              "height": 600,
+              "source": "aircandi.images",
+              "taken_at": 1472570145564
+            }
+          }          
+        },
+        "source": "user|system",
+        "reactions": {
+          ":thumbsup:": {
+            "$user": true
+          },
+          ":heart:": {
+            "$user": true
+          }
+        },
+        "created_by": "$user",
+        "created_at": 1452570145564,
+        "created_at_desc": -1452570145564,
+        "modified_by": "$user",
+        "modified_at": 1472570145564,
+        "taken_at": 1472570145564 // optional. promote from attachment to support sorting
+      },
+      "$message": {
+        "event": "channel_join|channel_leave", // optional
+        "channel": "$channel",
+        "text": "<$user|jaymassena> has joined the channel",
+        "created_by": "$user",
+        "created_at": 1452570145564,
+        "created_at_desc": -1452570145564,
+        "modified_by": "$user",
+        "modified_at": 1472570145564
+      }
+    }
+  },
+  "groups": {
+    "$group": {
+      "title": "Massena Time",
+      "photo": {
+        "filename": "profile_photo.jpg",
+        "width": 600,
+        "height": 600,
+        "source": "aircandi.images",
+        "taken_at": 1472570145564
+      },
+      "general": "$channel",
+      "default_channels": ["$channel", "$channel"],
+      "owned_by": "$user",
+      "created_by": "$user",
+      "created_at": 1452570145564,
+      "modified_by": "$user",
+      "modified_at": 1472570145564
+    }
+  },
+  "installs": {
+    "$user": {
+      "$install" : true
+    }
+  },
+  "invites": {
+    "accepted_at": 1452570145,
+    "accepted_by": "$user",
+    "channels": {
+      "$channel": "jay-time"
+    },
+    "created_at": 1452570145,
+    "created_by": "$user",
+    "email": "larissa@massena.com",    
+    "group": {
+      "id": "$group",
+      "title": "Massena Time"
+    },
+    "invited_at": 1452570145,
+    "invited_at_desc": -1452570145,
+    "inviter": {
+      "email": "jay@3meters.com",
+      "id": "$user",
+      "title": "Jay Massena",
+      "username": "jayminator"
+    },
+    "link": "branchUrl",
+    "role": "owner|member|guest",
+    "status": "pending|accepted"
+  },
+  "location-channels": {
+    // Set by geofire
+  },
+  "location-messages": {
+    // Set by geofire
+  },
+  "member-channels": {
+    "$user": {
+      "$group": {
+        "$channel": { // Remove when archived
+          "muted": false,
+          "starred": false,
+          "archived": false,
+          "role": "owner|member",          
+          /* unread=index:0=bucket:1, 
+             starred=index:1/bucket:2, 
+             general=index:2/bucket:3, 
+             chatter=index:3/bucket:4, 
+             default=index:4/bucket:5 */
+          "priority": 0, // Index
+          "joined_at": 1452570145,
+          "joined_at_desc": -1452570145,
+          "index_priority_joined_at": 2501452570145,
+          "index_priority_joined_at_desc": -2101452570145
+        }
+      }
+    }
+  },
+  "member-groups": {
+    "$user": {
+      "$group": {
+        "disabled": false, // used by admin
+        "hide_email": true,
+        "last_channel": "ch-xxxxxx",
+        "notifications": "all|none|direct_only",
+        "role": "owner|member|guest",
+        "priority": 250, // 150=owner, 250=member, 350=guest
+        "joined_at": 1452570145,
+        "joined_at_desc": -1452570145,
+        "index_priority_joined_at": 2501452570145,
+        "index_priority_joined_at_desc": -2101452570145 // prepend priority reversed bucket
+      }
+    }
+  },
+  "queue": {
+    "clear-unreads": {
+      "$taskId": {
+        "target": "user|group|channel",
+        "groupId": "$group",
+        "channelId": "$channel",
+        "messageId": "$message"
+      }
+    },
+    "invites": {
+      "$taskId": {
+        "channels": { // Optional
+          "$channel": "jay-time"
+        },
+        "group": {
+          "id": "$group",
+          "title": "Massena Time"
+        },
+        "invited_by": "$user",
+        "link": "branchUrl",
+        "recipients": ["email"],
+        "type": "invite-members|invite-guests|invite-guests-multi-channel",
+        "user": {
+          "email": "jay@3meters.com",
+          "id": "$user",
+          "title": "Jay Massena",
+          "username": "jayminator"
+        }
+      }
+    },
+    "notifications": {
+      "$taskId": {
+        "channelName": "jay-time",
+        "created_at": 1452570145,
+        "created_by": "$user",
+        "channelId": "$channel",
+        "groupId": "$groupId",
+        "text": "Time to party!",
+        "photo": {
+          "filename": "12345678.jpg",
+          "width": 600,
+          "height": 600,
+          "source": "aircandi.images",
+          "taken_at": 1472570145564
+        }
+      }
+    },
+    "create-user": {
+      "$taskId": {
+        "created_at": 1452570145,
+        "created_by": "$userId",
+        "id": "$taskId",
+        "state": "waiting",
+        "user_id": "$user",
+        "username": "jayminator"
+      }
+    },
+    "update-username": {
+      "$taskId": {
+        "created_at": 1452570145,
+        "created_by": "$userId",
+        "id": "$taskId",
+        "state": "waiting",
+        "userId": "$user",
+        "username": "jayminator"
+      }
+    }
+  },
+  "typing": {
+    "$group" : {
+      "$channel": {
+        "$user": "jayminator"
+      }
+    }    
+  },
+  "unreads": {
+    "$user": {
+      "$group" : {
+        "$channel": {
+          "$message": true
+        }
+      }
+    }
+  },
+  "usernames": {
+    "$username": "$userId"
+  },
+  "users": {
+    "$user": {
+      "email": "jay@3meters.com",
+      "presence": "true|1452570145564", // timestamp when last online
+      "created_at": 1472570145564,
+      "modified_at": 1472570145564,
+      "username": "jayminator", // 21 chars or less, lowercase|numbers|_-
+      "profile": {
+        "first_name": "Jay",
+        "last_name": "Massena",
+        "full_name": "Jay Massena",
+        "phone": "+1 (425) 633 4695",
+        "photo": {
+          "filename": "profile_photo.jpg",
+          "width": 600,
+          "height": 600,
+          "source": "aircandi.images",
+          "taken_at": 1472570145564
+        }
+      }
+    }
+  }
+}

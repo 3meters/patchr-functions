@@ -1,0 +1,13 @@
+{
+  "name": "patchr-functions",
+  "description": "Cloud Functions for Patchr 2.0",
+  "dependencies": {
+    "async": "*",
+    "btoa": "*",
+    "firebase-admin": "^4.1.2",
+    "firebase-functions": "^0.5",
+    "lodash": "*",
+    "sendgrid": "*"
+  },
+  "private": true
+}
