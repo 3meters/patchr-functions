@@ -2,6 +2,6 @@
   "projects": {
     "default": "patchr-ios-dev",
     "production": "patchr-ios",
-    "development": "patchr-ios-dev"
+    "staging": "patchr-ios-dev"
   }
 }

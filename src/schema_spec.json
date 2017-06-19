@@ -33,7 +33,7 @@
           "filename": "channel_photo.jpg",
           "width": 600,
           "height": 600,
-          "source": "aircandi.images",
+          "source": "google-storage",
           "taken_at": 1472570145564
         },
         "general": false, // general channel can't be deleted
@@ -71,7 +71,7 @@
               "filename": "$photo.jpg",
               "width": 600,
               "height": 600,
-              "source": "aircandi.images",
+              "source": "google-storage",
               "taken_at": 1472570145564
             }
           },
@@ -80,7 +80,7 @@
               "filename": "$animated.gif",
               "width": 600,
               "height": 600,
-              "source": "aircandi.images",
+              "source": "google-storage",
               "taken_at": 1472570145564
             }
           }          
@@ -120,7 +120,7 @@
         "filename": "profile_photo.jpg",
         "width": 600,
         "height": 600,
-        "source": "aircandi.images",
+        "source": "google-storage",
         "taken_at": 1472570145564
       },
       "general": "$channel",
@@ -206,7 +206,7 @@
       }
     }
   },
-  "queue": {
+  "tasks": {
     "clear-unreads": {
       "$taskId": {
         "target": "user|group|channel",
@@ -215,7 +215,7 @@
         "messageId": "$message"
       }
     },
-    "invites": {
+    "create-invite": {
       "$taskId": {
         "channels": { // Optional
           "$channel": "jay-time"
@@ -236,23 +236,6 @@
         }
       }
     },
-    "notifications": {
-      "$taskId": {
-        "channelName": "jay-time",
-        "created_at": 1452570145,
-        "created_by": "$user",
-        "channelId": "$channel",
-        "groupId": "$groupId",
-        "text": "Time to party!",
-        "photo": {
-          "filename": "12345678.jpg",
-          "width": 600,
-          "height": 600,
-          "source": "aircandi.images",
-          "taken_at": 1472570145564
-        }
-      }
-    },
     "create-user": {
       "$taskId": {
         "created_at": 1452570145,
@@ -263,7 +246,7 @@
         "username": "jayminator"
       }
     },
-    "update-username": {
+    "change-username": {
       "$taskId": {
         "created_at": 1452570145,
         "created_by": "$userId",
@@ -309,7 +292,7 @@
           "filename": "profile_photo.jpg",
           "width": 600,
           "height": 600,
-          "source": "aircandi.images",
+          "source": "google-storage",
           "taken_at": 1472570145564
         }
       }

@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users

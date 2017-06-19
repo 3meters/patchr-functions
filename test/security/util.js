@@ -2,7 +2,7 @@
  * Common operations for test framework.
  */
 
-function generateData(exclude) {
+exports.generateData = function generateData(exclude) {
   let data = {}
   let exclusions = exclude || {}
   if (!exclusions.channelNames) addChannelNames(data)
@@ -17,7 +17,7 @@ function generateData(exclude) {
   if (!exclusions.invites) addInvites(data)
   if (!exclusions.memberChannels) addMemberChannels(data)
   if (!exclusions.memberGroups) addMemberGroups(data)
-  if (!exclusions.queue) addQueue(data)
+  if (!exclusions.tasks) addTasks(data)
   if (!exclusions.typing) addTyping(data)
   if (!exclusions.unreads) addUnreads(data)
   if (!exclusions.usernames) addUsernames(data)
@@ -204,7 +204,7 @@ function addGroupChannels(data) {
         "photo": {
           "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
           "height": 1280,
-          "source": "aircandi.images",
+          "source": "google-storage",
           "width": 960
         },
         "purpose": "Surprise party for Tarzan!",
@@ -327,7 +327,7 @@ function addGroupMessages(data) {
               "photo": {
                 "filename": "20151010_181726_0616_210973.jpg",
                 "height": 768,
-                "source": "aircandi.images",
+                "source": "google-storage",
                 "width": 1024,
                 "uploading": true,
                 "taken_at": 1444526248003,
@@ -414,8 +414,9 @@ function addInvites(data) {
     "gr-treehouse": {
       "us-janexxxxx": {
         "in-treehous1": {
-          "channels": {
-            "ch-privatexx": "birthday-surprise"
+          "channel": {
+            "id": "ch-privatexx",
+            "name": "birthday-surprise"
           },
           "created_at": 1484425797938,
           "created_by": "us-janexxxxx",
@@ -439,8 +440,9 @@ function addInvites(data) {
         "in-treehous2": {
           "accepted_at": 1484525797938,
           "accepted_by": "us-maryxxxxx",
-          "channels": {
-            "ch-privatexx": "birthday-surprise"
+          "channel": {
+            "id": "ch-privatexx",
+            "name": "birthday-surprise"
           },
           "created_at": 1484425797938,
           "created_by": "us-janexxxxx",
@@ -462,8 +464,9 @@ function addInvites(data) {
           "status": "accepted"
         },
         "in-treehous3": {
-          "channels": {
-            "ch-chatterxx": "chatter"
+          "channel": {
+            "id": "ch-chatterxx",
+            "name": "chatter"
           },
           "created_at": 1484425797938,
           "created_by": "us-janexxxxx",
@@ -485,8 +488,9 @@ function addInvites(data) {
           "status": "pending"
         },
         "in-treehous4": {
-          "channels": {
-            "ch-privatexx": "birthday-surprise"
+          "channel": {
+            "id": "ch-privatexx",
+            "name": "birthday-surprise"
           },
           "created_at": 1484425797938,
           "created_by": "us-janexxxxx",
@@ -527,6 +531,32 @@ function addInvites(data) {
           "role": "member",
           "status": "pending"
         },
+      },
+      "us-tarzanxxx": {
+        "in-treehous1": {
+          "channel": {
+            "id": "ch-privatexx",
+            "name": "birthday-surprise"
+          },
+          "created_at": 1484425797938,
+          "created_by": "us-tarzanxxx",
+          "email": "cheeta@jungle.com",
+          "group": {
+            "id": "gr-treehouse",
+            "title": "Treehouse"
+          },
+          "invited_at": 1484425797938,
+          "invited_at_desc": -1484425797938,
+          "inviter": {
+            "email": "tarzan@jungle.com",
+            "id": "us-tarzanxxx",
+            "title": "Tarzan",
+            "username": "tarzan"
+          },
+          "link": "https://bvvb.app.link/X3Kj57ZbWz",
+          "role": "guest",
+          "status": "pending"
+        },        
       }
     },
     "gr-janetimex": {
@@ -737,38 +767,46 @@ function addMemberGroups(data) {
   return data
 }
 
-function addQueue(data) {
-  data.queue = {
+function addTasks(data) {
+  data.tasks = {
     "create-user": {
       "ta-taskautokeyxxxxx1": {
         "created_at": 1481392125839,
         "created_by": "us-cheetaxxx",
-        "user_id": "us-cheetaxxx",
-        "username": "cheeta",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "processing",
-        "retain": true
+        "request": {
+          "user_id": "us-cheetaxxx",
+          "username": "cheeta",
+        }
       }
     },
     "clear-unreads": {
       "ta-taskautokeyxxxxx1": {
         "created_at": 1481392125839,
         "created_by": "us-tarzanxxx",
-        "channel_id": "ch-generalxx",
-        "group_id": "gr-treehouse",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "waiting",
-        "target": "channel",
+        "request": {
+          "channel_id": "ch-generalxx",
+          "group_id": "gr-treehouse",
+          "target": "channel",
+        }
       }
     },
-    "deletes": {
+    "delete-group": {
       "ta-taskautokeyxxxxx1": {
-        "channel_id": "ch-chatterxx",
         "created_at": 1481392125839,
         "created_by": "us-tarzanxxx",
-        "group_id": "gr-treehouse",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "waiting",
+        "request": {
+          "group_id": "gr-treehouse",
+        }
+      }
+    },
+    "delete-channel": {
+      "ta-taskautokeyxxxxx1": {
+        "created_at": 1481392125839,
+        "created_by": "us-tarzanxxx",
+        "request": {
+          "channel_id": "ch-chatterxx",
+          "group_id": "gr-treehouse",
+        }
       }
     },
     "join-group": {
@@ -776,59 +814,45 @@ function addQueue(data) {
         "created_at": 1481392125839,
         "created_by": "us-tarzanxxx",
         "group_id": "gr-treehouse",
-        "role": "member",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "waiting",
-        "user_id": "us-cheetaxxx",
+        "request": {
+          "role": "member",
+          "user_id": "us-cheetaxxx",
+        }
       }
     },
-    "invites": {
+    "create-invite": {
       "ta-taskautokeyxxxxx1": {
-        "channels": {
-          "ch-privatexx": "birthday-surprise"
-        },
         "created_at": 1481392125839,
         "created_by": "us-janexxxxx",
-        "group": {
-          "id": "gr-treehouse",
-          "title": "Treehouse"
+        "request": {
+          "channels": {
+            "ch-privatexx": "birthday-surprise",
+          },
+          "group": {
+            "id": "gr-treehouse",
+            "title": "Treehouse"
+          },
+          "invite_id": "in-treehous1",
+          "inviter": {
+            "email": "jane@jungle.com",
+            "id": "us-janexxxxx",
+            "title": "Jane Johnson-Smith",
+            "username": "jane"
+          },
+          "link": "https://bvvb.app.link/X3Kj57ZbWz",
+          "recipient": "mary@jungle.com",
+          "type": "invite-guests",
         },
-        "id": "ta-taskautokeyxxxxx1",
-        "invite_id": "in-treehous1",
-        "inviter": {
-          "email": "jane@jungle.com",
-          "id": "us-janexxxxx",
-          "title": "Jane Johnson-Smith",
-          "username": "jane"
-        },
-        "link": "https://bvvb.app.link/X3Kj57ZbWz",
-        "recipient": "mary@jungle.com",
-        "state": "waiting",
-        "type": "invite-guests",
       }
     },
-    "notifications": {
-      "ta-taskautokeyxxxxx1": {
-        "channelName": "general",
-        "created_at": 1484425797938,
-        "created_by": "us-tarzanxxx",
-        "channel_id": "ch-generalxx",
-        "group_id": "gr-treehouse",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "waiting",
-        "text": "Hey, what does a guy have to do to get a banana around here?.",
-        "username": "tarzan",
-      }
-    },
-    "update-username": {
+    "change-username": {
       "ta-taskautokeyxxxxx1": {
         "created_at": 1481392125839,
         "created_by": "us-cheetaxxx",
-        "user_id": "us-cheetaxxx",
-        "username": "cheetasmokin",
-        "id": "ta-taskautokeyxxxxx1",
-        "state": "processing",
-        "retain": true
+        "request": {
+          "user_id": "us-cheetaxxx",
+          "username": "cheetasmokin",
+        }
       }
     },
   }
@@ -861,6 +885,13 @@ function addUnreads(data) {
           "me-messagex2": true
         }
       }
+    },
+    "us-tarzanxxx": {
+      "gr-treehouse": {
+        "ch-privatexx": {
+          "me-messagex2": true
+        }
+      }      
     }
   }
   return data
@@ -891,7 +922,7 @@ function addUsers(data) {
         "photo": {
           "filename": "20161210_150029_0220_440133.jpg",
           "height": 958,
-          "source": "aircandi.images",
+          "source": "google-storage",
           "width": 958
         }
       }
@@ -909,7 +940,7 @@ function addUsers(data) {
         "photo": {
           "filename": "20161210_150029_0220_440133.jpg",
           "height": 958,
-          "source": "aircandi.images",
+          "source": "google-storage",
           "width": 958
         }
       }
@@ -930,7 +961,6 @@ function addUsers(data) {
   return data
 }
 
-exports.generateData = generateData
 exports.users = {
   unauth: null,
   worker: {
@@ -939,21 +969,25 @@ exports.users = {
     provider: 'admin'
   },
   tarzan: {
+    email: 'tarzan@treehouse.com',
     uid: 'us-tarzanxxx',
     id: 1,
     provider: 'password'
   },
   jane: {
+    email: 'jane@treehouse.com',
     uid: 'us-janexxxxx',
     id: 1,
     provider: 'password'
   },
   mary: {
+    email: 'mary@treehouse.com',
     uid: 'us-maryxxxxx',
     id: 1,
     provider: 'password'
   },
   cheeta: {
+    email: 'cheeta@treehouse.com',
     uid: 'us-cheetaxxx',
     id: 1,
     provider: 'password'

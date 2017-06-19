@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -30,7 +30,7 @@ describe('Channels', function() {
       "photo": {
         "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
         "height": 1280,
-        "source": "aircandi.images",
+        "source": "google-storage",
         "width": 960
       },
       "purpose": "Making great trips",
@@ -71,20 +71,20 @@ describe('Channels', function() {
       expect(users.jane).can.write("Huge surprise party for Tarzan!").to.path(path + "/purpose")
     })
 
-    it('channel can only be deleted by worker', function() {
+    it('channel can only be deleted by owner, creator or worker', function() {
       const path = "group-channels/gr-treehouse/ch-privatexx"
       expect(users.cheeta).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.jane).cannot.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // Channel creator and owner
       expect(users.worker).can.write(null).to.path(path)
     })
 
-    it('general channel cannot be deleted by anyone except worker', function() {
+    it('general channel cannot be deleted by anyone except owner, creator or worker', function() {
       const path = "group-channels/gr-treehouse/ch-generalxx"
       expect(users.cheeta).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.tarzan).cannot.write(null).to.path(path)
-      expect(users.jane).cannot.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // Group owner
+      expect(users.tarzan).can.write(null).to.path(path) // Channel creator and owner
       expect(users.worker).can.write(null).to.path(path)
     })
   })

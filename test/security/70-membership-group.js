@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -52,9 +52,9 @@ describe('Group Membership', function() {
       expect(users.cheeta).cannot.write(membership, 1481392125839).to.path(pathCheeta)
     })
 
-    it('mary cannot join janetime using invite that has already been used', function() {
+    it('mary can join janetime using invite that has already been used', function() {
       let membership = membershipFrom("us-cheetaxxx", "member", "mary@jungle.com", "in-janetime2", "us-janexxxxx")
-      expect(users.mary).cannot.write(membership, 1481392125839).to.path(pathMary)
+      expect(users.mary).can.write(membership, 1481392125839).to.path(pathMary)
     })
 
     it('mary cannot join janetime using invite with wrong role', function() {
@@ -90,13 +90,37 @@ describe('Group Membership', function() {
       expect(users.worker).can.write("tarzan@gmail.com").to.path(path + "/email")
     })
 
-    it('only worker, creator, group owner role can update membership', function() {
+    it('only worker, creator, group owner role can delete membership', function() {
       const path = "group-members/gr-treehouse/us-tarzanxxx"
       expect(users.cheeta).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
       expect(users.jane).can.write(null).to.path(path) // group owner role
-      expect(users.tarzan).can.write(null).to.path(path) // creator
+      expect(users.tarzan).can.write(null).to.path(path) // creator, group primary owner (owned_by)
       expect(users.worker).can.write(null).to.path(path)
+    })
+
+    it('only worker, creator, group owner can delete reverse membership', function() {
+      const path = "member-groups/us-tarzanxxx/gr-treehouse"
+      expect(users.cheeta).cannot.write(null).to.path(path)
+      expect(users.mary).cannot.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // group owner role
+      expect(users.tarzan).can.write(null).to.path(path) // creator, group primary owner (owned_by)
+      expect(users.worker).can.write(null).to.path(path)
+    })
+
+    it('only worker or group owner can remove member from group using batch update', function() {
+      /* Fails if any of the data does not exist */
+      const updates = {
+        "member-groups/us-tarzanxxx/gr-treehouse": null,
+        "unreads/us-tarzanxxx/gr-treehouse": null,
+        "group-members/gr-treehouse/us-tarzanxxx": null,
+        "invites/gr-treehouse/us-tarzanxxx": null,
+      }
+      expect(users.cheeta).cannot.patch(updates).to.path('/')
+      expect(users.mary).cannot.patch(updates).to.path('/')
+      expect(users.jane).can.patch(updates).to.path('/') // group owner role
+      expect(users.tarzan).can.patch(updates).to.path('/') // creator, group primary owner (owned_by)
+      expect(users.worker).can.patch(updates).to.path('/')
     })
   })
 

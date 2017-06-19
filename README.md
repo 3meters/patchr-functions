@@ -1,1 +1,0 @@
-# patchr-functions

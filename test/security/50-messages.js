@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -25,7 +25,7 @@ describe('Messages', function() {
           "photo": {
             "filename": "20170209_095635_0110_270471.jpg",
             "height": 768,
-            "source": "aircandi.images",
+            "source": "google-storage",
             "width": 1024,
             "uploading": true,
             "taken_at": 1444526248003,
@@ -49,7 +49,7 @@ describe('Messages', function() {
     const photo = {
       "filename": "20170209_095635_0110_270471.jpg",
       "height": 768,
-      "source": "aircandi.images",
+      "source": "google-storage",
       "width": 1024,
       "uploading": null,
       "taken_at": 1444526248003,

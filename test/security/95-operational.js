@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -111,18 +111,26 @@ describe('Operational', function() {
       const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx/me-messagex1'
       expect(users.unauth).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.tarzan).cannot.write(null).to.path(path)
+      expect(users.tarzan).can.write(null).to.path(path) // group and channel owner
       expect(users.worker).can.write(null).to.path(path)
-      expect(users.jane).can.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // inviter, group owner
     })
-    // it('only current user or worker can remove channel unreads', function() {
-    //   const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx'
-    //   expect(users.unauth).cannot.write(null).to.path(path)
-    //   expect(users.mary).cannot.write(null).to.path(path)
-    //   expect(users.tarzan).cannot.write(null).to.path(path)
-    //   expect(users.worker).can.write(null).to.path(path)
-    //   expect(users.jane).can.write(null).to.path(path)
-    // })
+    it('only group|channel owner, inviter, or worker can remove channel unreads', function() {
+      const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx'
+      expect(users.unauth).cannot.write(null).to.path(path)
+      expect(users.mary).cannot.write(null).to.path(path)
+      expect(users.tarzan).can.write(null).to.path(path) // group and channel owner
+      expect(users.worker).can.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // inviter, group owner
+    })
+    it('only group owner, inviter or worker can remove group unreads', function() {
+      const path = 'unreads/us-janexxxxx/gr-treehouse'
+      expect(users.unauth).cannot.write(null).to.path(path)
+      expect(users.mary).cannot.write(null).to.path(path)
+      expect(users.tarzan).can.write(null).to.path(path) // group owner
+      expect(users.worker).can.write(null).to.path(path)
+      expect(users.jane).can.write(null).to.path(path) // inviter, group owner
+    })
     it('only worker can clear all unreads', function() {
       const path = 'unreads'
       expect(users.unauth).cannot.write(null).to.path(path)

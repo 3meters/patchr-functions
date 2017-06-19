@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -83,9 +83,9 @@ describe('Channel Membership', function() {
       expect(users.mary).cannot.write(membership, 1481392125839).to.path(pathMary)
     })
 
-    it('mary cannot join private channel using invite that has already been used', function() {
+    it('mary can join private channel using invite that has already been used', function() {
       let membership = membershipFrom(users.mary.uid, "member", "in-treehous2", "us-janexxxxx")
-      expect(users.mary).cannot.write(membership, 1481392125839).to.path(pathMary)
+      expect(users.mary).can.write(membership, 1481392125839).to.path(pathMary)
     })
 
     it('mary cannot join private channel as owner using invite', function() {

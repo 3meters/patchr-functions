@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -74,10 +74,10 @@ describe('Groups', function() {
       expect(users.jane).can.write("Super Best Treehouse").to.path("groups/gr-treehouse/title")
     })
 
-    it('group can only be deleted by worker', function() {
+    it('group can only be deleted by creator, group owner, or worker', function() {
       expect(users.mary).cannot.write(null).to.path("groups/gr-treehouse")
-      expect(users.tarzan).cannot.write(null).to.path("groups/gr-treehouse")
-      expect(users.jane).cannot.write(null).to.path("groups/gr-treehouse")
+      expect(users.jane).can.write(null).to.path("groups/gr-treehouse") // Group owner
+      expect(users.tarzan).can.write(null).to.path("groups/gr-treehouse") // Group creator
       expect(users.worker).can.write(null).to.path("groups/gr-treehouse")
     })
   })

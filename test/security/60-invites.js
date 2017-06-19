@@ -1,6 +1,6 @@
 const chai = require('chai')
 const targaryen = require('targaryen/plugins/chai')
-const rules = targaryen.json.loadSync('database.rules.json')
+const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
@@ -47,13 +47,16 @@ describe('Invites', function() {
 
     let pathCreate = 'invites/gr-treehouse/us-janexxxxx/in-treehous6'
     let pathUpdate = 'invites/gr-treehouse/us-janexxxxx/in-treehous1'
+    let pathDelete = 'invites/gr-treehouse/us-janexxxxx/in-treehous1'
+    let pathDeleteAllForUser = 'invites/gr-treehouse/us-janexxxxx'
+    let pathDeleteAllForGroup = 'invites/gr-treehouse'
     let pathStatusPending = 'invites/gr-treehouse/us-janexxxxx/in-treehous1/status'
     let pathStatusAccepted = 'invites/gr-treehouse/us-janexxxxx/in-treehous2/status'
 
-    it('non-worker cannot create invites', function() {
+    it('group member can create invite from them', function() {
       expect(users.tarzan).cannot.write(invite, 1484425797938).to.path(pathCreate)
-      expect(users.jane).cannot.write(invite, 1484425797938).to.path(pathCreate)
       expect(users.unauth).cannot.write(invite, 1484425797938).to.path(pathCreate)
+      expect(users.jane).can.write(invite, 1484425797938).to.path(pathCreate)
     })
 
     it('worker can create invite from jane to mary', function() {
@@ -79,17 +82,29 @@ describe('Invites', function() {
       expect(users.jane).can.write(invite, 1484425797938).to.path(pathUpdate)
     })
 
-    it('only jane as inviter can delete invite', function() {
-      expect(users.tarzan).cannot.write(null).to.path(pathUpdate)
-      expect(users.unauth).cannot.write(null).to.path(pathUpdate)
-      expect(users.jane).can.write(null).to.path(pathUpdate)
+    it('only inviter or group owner can delete their invite', function() {
+      expect(users.unauth).cannot.write(null).to.path(pathDelete)
+      expect(users.tarzan).can.write(null).to.path(pathDelete) // group owner
+      expect(users.jane).can.write(null).to.path(pathDelete) // invite owner
+    })
+
+    it('only inviter or group owner can delete all their invites', function() {
+      expect(users.unauth).cannot.write(null).to.path(pathDeleteAllForUser)
+      expect(users.tarzan).can.write(null).to.path(pathDeleteAllForUser) // group owner
+      expect(users.jane).can.write(null).to.path(pathDeleteAllForUser) // invite owner
+    })
+
+    it('only group owner can delete all invites for group', function() {
+      expect(users.unauth).cannot.write(null).to.path(pathDeleteAllForGroup)
+      expect(users.tarzan).can.write(null).to.path(pathDeleteAllForGroup) // group primary owner (owned_by)
+      expect(users.jane).can.write(null).to.path(pathDeleteAllForGroup) // group role owner
     })
   })
 
   describe('Invite reads', function() {
     it('only jane or worker can read her invites for a group', function() {
-      expect(users.tarzan).cannot.read.path(`invites/gr-treehouse/${users.jane.uid}`)
       expect(users.unauth).cannot.read.path(`invites/gr-treehouse/${users.jane.uid}`)
+      expect(users.tarzan).can.read.path(`invites/gr-treehouse/${users.jane.uid}`) // group owner
       expect(users.worker).can.read.path(`invites/gr-treehouse/${users.jane.uid}`)
       expect(users.jane).can.read.path(`invites/gr-treehouse/${users.jane.uid}`)
     })
