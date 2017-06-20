@@ -72,10 +72,10 @@ async function created(current: DeltaSnapshot) {
 }
 
 async function changed(previous: DeltaSnapshot, current: DeltaSnapshot) {
-  const channelId: string = current.key
+  const groupId: string = current.key
   const previousPhoto: any = previous.val().photo
   const currentPhoto: any = current.val().photo
-  console.log(`Channel changed: ${channelId}`)
+  console.log(`Group changed: ${groupId}`)
 
   if (previousPhoto) {
     if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
