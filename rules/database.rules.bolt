@@ -250,7 +250,68 @@ path /users/{userId}/username {
 path /tasks/create-user/{taskId} is CreateUserTask {
     create() { 
         isLoggedIn() && this.created_by == auth.uid && 
-        this.request.user_id == auth.uid }
+        (this.request.user_id == auth.uid || this.user_id == auth.uid) }
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+// ----------------------------------------------------------------------------
+// Queue: Retained for backwards compatibility
+// ----------------------------------------------------------------------------
+path /queue/clear-unreads/{taskId} is ClearUnreadsTask {
+    create() { isLoggedIn() && this.created_by == auth.uid }    
+    delete() { isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/create-user/{taskId} is CreateUserTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/join-group/{taskId} is JoinGroupTask {
+    /* Join group just needs to be an authenticated user linked to the request */
+    create() { isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) || 
+            this.user_id == auth.uid && hasValidInvite(this.group_id, this.invited_by, this.invite_id))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/deletes/{taskId} is DeleteTask {
+    /* Delete must have owner privileges for the group or channel */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) ||
+            (this.target == "channel" && isChannelOwner(this.group_id, this.channel_id, this.created_by)))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/invites/{taskId} is InviteTask {
+    /* Inviter must be a current user and current member of the group */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && this.inviter.id  == auth.uid && 
+        isGroupMember(this.group.id, this.inviter.id) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/notifications/{taskId} is NotificationTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && 
+        isGroupMember(this.group_id, this.created_by) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/update-username/{taskId} is UpdateUsernameTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }    
     read() {
         isLoggedIn() && isCreatorOf(this) }
     delete() { 
@@ -490,6 +551,7 @@ type Group {
 type Invite {
     accepted_at: Timestamp|Null,
     accepted_by: AnyKey|Null,
+    channels: Map<PatchrKey, String>|Null, // v1
     channel: InviteChannel|Null,
     created_at: Timestamp,
     created_by: AnyKey,
@@ -533,9 +595,16 @@ type Task {
     created_at: Timestamp,
     created_by: AnyKey,
     response: Response|Null,
+    error: Object|Null, // v1
+    result: Any|Null, // v1
+    id: AutoKey, // v1
+    retain: Boolean|Null, // v1
+    state: TaskState, // v1
 }
 type CreateUserTask extends Task {
-    request: CreateUserRequest
+    request: CreateUserRequest|Null
+    user_id: AnyKey, // v1
+    username: UserName, // v1
 }
 type CreateUserRequest {
     user_id: AnyKey,
@@ -544,6 +613,51 @@ type CreateUserRequest {
 type Response {
     error: String|Null,
     result: Any|Null,
+}
+// ----------------------------------------------------------------------------
+// Compatibility
+// ----------------------------------------------------------------------------
+type ClearUnreadsTask extends Task {
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+    message_id: AutoKey|Null,
+    target: TargetType,
+}
+type UpdateUsernameTask extends Task {
+    user_id: AnyKey,
+    username: UserName,
+}
+type DeleteTask extends Task {
+    validate() { this.target != "channel" || this.channel_id != null }
+    target: TargetType,
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+}
+type InviteTask extends Task {
+    channels: Map<PatchrKey, String>|Null,
+    group: InviteGroup,
+    inviter: Inviter,
+    invite_id: PatchrKey,
+    link: UrlString,
+    recipient: EmailString,
+    type: InviteType,
+}
+type JoinGroupTask extends Task {
+    channels: Map<PatchrKey, String>|Null,  // used if no invite
+    group_id: PatchrKey,                    // used if no invite
+    invite_id: PatchrKey|Null,
+    invited_by: AnyKey|Null,
+    role: GroupRole,                        // used if no invite
+    user_id: AnyKey,
+    email: EmailString|Null,
+}
+type NotificationTask extends Task {
+    channel_id: PatchrKey,
+    channelName: ChannelName,
+    group_id: PatchrKey,
+    username: UserName,
+    text: BodyString|Null,
+    photo: Photo|Null,
 }
 // ----------------------------------------------------------------------------
 // Functions
@@ -629,10 +743,10 @@ function currentUserIsInviter(invite) {
     return prior(invite).inviter.id == auth.uid
 }
 function isChannelInvite(invite) {
-    return prior(invite).channel != null
+    return prior(invite).channel != null || (prior(invite).channels != null && prior(invite).channels.length > 0)
 }
 function isGroupInvite(invite) {
-    return prior(invite).channel == null
+    return prior(invite).channel == null && prior(invite).channels == null
 }
 function hasValidGroupInvite(groupId, inviterId, inviteId, role) {
     return prior(root)["invites"][groupId][inviterId][inviteId] != null &&            // exists
