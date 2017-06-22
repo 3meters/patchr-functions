@@ -8,7 +8,7 @@ const data = testUtil.generateData()
 /* jshint -W117 */
 
 chai.use(targaryen)
-describe('Patchr security rules', function() {
+describe('Patchr v2.0 security rules', function() {
 
   before(function() {
     targaryen.setFirebaseData(data)

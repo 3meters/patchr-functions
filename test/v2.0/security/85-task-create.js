@@ -22,11 +22,6 @@ describe('Tasks create', function() {
     var task = {
       created_at: 1481392125839,
       created_by: "us-cheetaxxx",
-      user_id: "us-cheetaxxx",
-      username: "cheeta",
-      id: "ta-taskautokeyxxxxx2",
-      retain: true,
-      state: "waiting",
       request: {
         user_id: "us-cheetaxxx",
         username: "cheeta",

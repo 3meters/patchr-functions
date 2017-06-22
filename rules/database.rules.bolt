@@ -205,6 +205,15 @@ path /member-groups/{userId}/{groupId} is GroupMember {
     delete() { 
         isLoggedIn() && (isCreatorOf(this) || isGroupOwner(groupId, auth.uid))}
 }
+path /tasks/create-user/{taskId} is CreateUserTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        (this.request.user_id == auth.uid || this.user_id == auth.uid) }
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
 path /typing/{groupId}/{channelId} {
     read() { 
         isLoggedIn() && isChannelMember(groupId, channelId, auth.uid) }
@@ -243,79 +252,6 @@ path /users/{userId}/presence {
 }
 path /users/{userId}/username {
     write() { isCurrentUser(userId) && isCreatorOf(this.parent())}
-}
-// ----------------------------------------------------------------------------
-// Tasks
-// ----------------------------------------------------------------------------
-path /tasks/create-user/{taskId} is CreateUserTask {
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && 
-        (this.request.user_id == auth.uid || this.user_id == auth.uid) }
-    read() {
-        isLoggedIn() && isCreatorOf(this) }
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-// ----------------------------------------------------------------------------
-// Queue: Retained for backwards compatibility
-// ----------------------------------------------------------------------------
-path /queue/clear-unreads/{taskId} is ClearUnreadsTask {
-    create() { isLoggedIn() && this.created_by == auth.uid }    
-    delete() { isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/create-user/{taskId} is CreateUserTask {
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && 
-        this.user_id == auth.uid && this.state == "waiting" }
-    read() {
-        isLoggedIn() && isCreatorOf(this) }
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/join-group/{taskId} is JoinGroupTask {
-    /* Join group just needs to be an authenticated user linked to the request */
-    create() { isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
-        (isGroupOwner(this.group_id, this.created_by) || 
-            this.user_id == auth.uid && hasValidInvite(this.group_id, this.invited_by, this.invite_id))}    
-    read() {
-        isLoggedIn() && isCreatorOf(this) }
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/deletes/{taskId} is DeleteTask {
-    /* Delete must have owner privileges for the group or channel */
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
-        (isGroupOwner(this.group_id, this.created_by) ||
-            (this.target == "channel" && isChannelOwner(this.group_id, this.channel_id, this.created_by)))}    
-    read() {
-        isLoggedIn() && isCreatorOf(this) }
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/invites/{taskId} is InviteTask {
-    /* Inviter must be a current user and current member of the group */
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && this.inviter.id  == auth.uid && 
-        isGroupMember(this.group.id, this.inviter.id) }    
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/notifications/{taskId} is NotificationTask {
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && 
-        isGroupMember(this.group_id, this.created_by) }    
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
-}
-path /queue/update-username/{taskId} is UpdateUsernameTask {
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && 
-        this.user_id == auth.uid && this.state == "waiting" }    
-    read() {
-        isLoggedIn() && isCreatorOf(this) }
-    delete() { 
-        isLoggedIn() && isCreatorOf(this) }    
 }
 // ----------------------------------------------------------------------------
 // Types
@@ -437,9 +373,6 @@ type TargetType extends String {
 }
 type Coordinate extends Map<String, Number> {
     validate() { this["lat"] != null && this["lng"] != null }
-}
-type TaskState extends String {
-    validate() { this == "waiting" || this == "processing" || this == "error" || this == "finished" }    
 }
 type Reactions extends Map<ReactionType, Map<AnyKey, Boolean>> {
     // Convenience type
@@ -595,16 +528,9 @@ type Task {
     created_at: Timestamp,
     created_by: AnyKey,
     response: Response|Null,
-    error: Object|Null, // v1
-    result: Any|Null, // v1
-    id: AutoKey, // v1
-    retain: Boolean|Null, // v1
-    state: TaskState, // v1
 }
 type CreateUserTask extends Task {
-    request: CreateUserRequest|Null
-    user_id: AnyKey, // v1
-    username: UserName, // v1
+    request: CreateUserRequest
 }
 type CreateUserRequest {
     user_id: AnyKey,
@@ -613,51 +539,6 @@ type CreateUserRequest {
 type Response {
     error: String|Null,
     result: Any|Null,
-}
-// ----------------------------------------------------------------------------
-// Compatibility
-// ----------------------------------------------------------------------------
-type ClearUnreadsTask extends Task {
-    channel_id: PatchrKey|Null,
-    group_id: PatchrKey,
-    message_id: AutoKey|Null,
-    target: TargetType,
-}
-type UpdateUsernameTask extends Task {
-    user_id: AnyKey,
-    username: UserName,
-}
-type DeleteTask extends Task {
-    validate() { this.target != "channel" || this.channel_id != null }
-    target: TargetType,
-    channel_id: PatchrKey|Null,
-    group_id: PatchrKey,
-}
-type InviteTask extends Task {
-    channels: Map<PatchrKey, String>|Null,
-    group: InviteGroup,
-    inviter: Inviter,
-    invite_id: PatchrKey,
-    link: UrlString,
-    recipient: EmailString,
-    type: InviteType,
-}
-type JoinGroupTask extends Task {
-    channels: Map<PatchrKey, String>|Null,  // used if no invite
-    group_id: PatchrKey,                    // used if no invite
-    invite_id: PatchrKey|Null,
-    invited_by: AnyKey|Null,
-    role: GroupRole,                        // used if no invite
-    user_id: AnyKey,
-    email: EmailString|Null,
-}
-type NotificationTask extends Task {
-    channel_id: PatchrKey,
-    channelName: ChannelName,
-    group_id: PatchrKey,
-    username: UserName,
-    text: BodyString|Null,
-    photo: Photo|Null,
 }
 // ----------------------------------------------------------------------------
 // Functions
@@ -784,4 +665,124 @@ path /group-channels/{groupId} {
 }
 path /member-channels/{userId}/{groupId} {
     index() {["index_priority_joined_at_desc"]}
+}
+// ----------------------------------------------------------------------------
+// Deprecated
+// ----------------------------------------------------------------------------
+path /queue/clear-unreads/{taskId} is ClearUnreadsTask {
+    create() { isLoggedIn() && this.created_by == auth.uid }    
+    delete() { isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/create-user/{taskId} is CreateUserQueueTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/join-group/{taskId} is JoinGroupTask {
+    /* Join group just needs to be an authenticated user linked to the request */
+    create() { isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) || 
+            this.user_id == auth.uid && hasValidInvite(this.group_id, this.invited_by, this.invite_id))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/deletes/{taskId} is DeleteTask {
+    /* Delete must have owner privileges for the group or channel */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" &&
+        (isGroupOwner(this.group_id, this.created_by) ||
+            (this.target == "channel" && isChannelOwner(this.group_id, this.channel_id, this.created_by)))}    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/invites/{taskId} is InviteTask {
+    /* Inviter must be a current user and current member of the group */
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && this.inviter.id  == auth.uid && 
+        isGroupMember(this.group.id, this.inviter.id) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/notifications/{taskId} is NotificationTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && this.state == "waiting" && 
+        isGroupMember(this.group_id, this.created_by) }    
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+path /queue/update-username/{taskId} is UpdateUsernameTask {
+    create() { 
+        isLoggedIn() && this.created_by == auth.uid && 
+        this.user_id == auth.uid && this.state == "waiting" }    
+    read() {
+        isLoggedIn() && isCreatorOf(this) }
+    delete() { 
+        isLoggedIn() && isCreatorOf(this) }    
+}
+type TaskState extends String {
+    validate() { this == "waiting" || this == "processing" || this == "error" || this == "finished" }    
+}
+type QueueTask {
+    validate() {this.id == key()}
+    created_at: Timestamp,
+    created_by: AnyKey,
+    error: Object|Null,
+    result: Any|Null,
+    id: AutoKey,
+    retain: Boolean|Null,
+    state: TaskState,
+}
+type CreateUserQueueTask extends QueueTask {
+    user_id: AnyKey,
+    username: UserName,
+}
+type ClearUnreadsTask extends QueueTask {
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+    message_id: AutoKey|Null,
+    target: TargetType,
+}
+type UpdateUsernameTask extends QueueTask {
+    user_id: AnyKey,
+    username: UserName,
+}
+type DeleteTask extends QueueTask {
+    validate() { this.target != "channel" || this.channel_id != null }
+    target: TargetType,
+    channel_id: PatchrKey|Null,
+    group_id: PatchrKey,
+}
+type InviteTask extends QueueTask {
+    channels: Map<PatchrKey, String>|Null,
+    group: InviteGroup,
+    inviter: Inviter,
+    invite_id: PatchrKey,
+    link: UrlString,
+    recipient: EmailString,
+    type: InviteType,
+}
+type JoinGroupTask extends QueueTask {
+    channels: Map<PatchrKey, String>|Null,  // used if no invite
+    group_id: PatchrKey,                    // used if no invite
+    invite_id: PatchrKey|Null,
+    invited_by: AnyKey|Null,
+    role: GroupRole,                        // used if no invite
+    user_id: AnyKey,
+    email: EmailString|Null,
+}
+type NotificationTask extends QueueTask {
+    channel_id: PatchrKey,
+    channelName: ChannelName,
+    group_id: PatchrKey,
+    username: UserName,
+    text: BodyString|Null,
+    photo: Photo|Null,
 }
