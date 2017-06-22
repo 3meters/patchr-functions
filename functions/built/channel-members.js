@@ -46,7 +46,7 @@ function created(params, current) {
 function changed(params, previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const membership = current.val();
-        console.log(`Channel member updated: ${params.userId}`);
+        console.log(`Membership of: ${params.userId} updated for channel: ${params.channelId}`);
         try {
             yield shared.database.ref(`member-channels/${params.userId}/${params.groupId}/${params.channelId}`).set(membership);
         }

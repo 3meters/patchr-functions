@@ -76,10 +76,10 @@ function created(current) {
 }
 function changed(previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
-        const channelId = current.key;
+        const groupId = current.key;
         const previousPhoto = previous.val().photo;
         const currentPhoto = current.val().photo;
-        console.log(`Channel changed: ${channelId}`);
+        console.log(`Group changed: ${groupId}`);
         if (previousPhoto) {
             if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
                 if (previousPhoto.source === 'google-storage') {
