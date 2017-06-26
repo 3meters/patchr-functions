@@ -1,7 +1,7 @@
 {
   "name": "patchr-functions",
-  "version": "2.0.0",
-  "description": "Cloud Functions for Patchr 2.0",
+  "version": "1.0.0",
+  "description": "Cloud Functions for Patchr 1.0.0",
   "dependencies": {
     "@google-cloud/storage": "~1.1.0",
     "firebase-admin": "^4.2.1",

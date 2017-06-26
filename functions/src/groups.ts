@@ -7,8 +7,6 @@ import * as utils from './utils'
 type DataSnapshot = shared.DataSnapshot
 type DeltaSnapshot = shared.DeltaSnapshot
 const Action = shared.Action
-const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 /* Two extra invokes: task updated with response, task deleted by client. */
 
