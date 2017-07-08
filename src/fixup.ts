@@ -18,7 +18,33 @@ function run() {
   console.log('Fixup running...')
   let port = process.env.PORT || 8080
   console.log("Assigned port: " + port)
-  //fixupEmails()
+  fixupPhotos()
+}
+
+function fixupPhotos() {
+  admin.database().ref('group-messages').once('value', function(snap) {
+    snap.forEach(function(group) {
+      let groupId = group.key
+      group.forEach(function(channel) {
+        let channelId = channel.key
+        channel.forEach(function(message) {
+          let messageId = message.key
+            if (message.attachments) {
+              for (const prop in message.attachments) {
+                if (message.attachments.hasOwnProperty(prop)) {
+                  return message.attachments[prop].photo
+                }
+              }
+            }
+
+          admin.database().ref(`group-messages/${groupId}/${channelId}/${messageId}/group_id`).set(groupId)
+          admin.database().ref(`group-messages/${groupId}/${channelId}/${messageId}/channel_id`).set(channelId)
+          admin.database().ref(`group-messages/${groupId}/${channelId}/${messageId}/group`).remove()
+          admin.database().ref(`group-messages/${groupId}/${channelId}/${messageId}/channel`).remove()
+        })
+      })
+    })
+  })
 }
 
 function fixupEmails() {

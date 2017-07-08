@@ -13,7 +13,17 @@
     "targaryen": "^3.0.1"
   },
   "dependencies": {
+    "@google-cloud/storage": "~1.1.0",
+    "@types/node": "^8.0.8",
+    "@types/async": "*",
+    "@types/request-promise": "^4.1.36",
+    "async": "^2.5.0",
+    "aws-sdk": "^2.81.0",
+    "firebase-admin": "^4.2.1",
     "global": "^4.3.2",
+    "lodash": "^4.6.1",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
     "typescript": "^2.3.4"
   }
 }
