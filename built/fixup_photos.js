@@ -28,7 +28,7 @@ run();
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('Photo fixup running...');
-        yield fixupPhotos();
+        yield fixupChannelPhotos();
     });
 }
 function transferImages() {
@@ -79,7 +79,7 @@ function transferImages() {
         });
     });
 }
-function fixupPhotos() {
+function fixupMessagePhotos() {
     return __awaiter(this, void 0, void 0, function* () {
         const groups = yield admin.database()
             .ref('group-messages')
@@ -97,13 +97,92 @@ function fixupPhotos() {
                                     const path = `attachments/${prop}/photo/source`;
                                     console.log(`Updating photo source: ${photo.filename}`);
                                     console.log(`Path: ${message.ref}/${path}`);
-                                    message.ref.child(path).set('google-storage');
+                                    // message.ref.child(path).set('google-storage')
                                 }
                             }
                         }
                     }
                     return false;
                 });
+                return false;
+            });
+            return false;
+        });
+        console.log(`Total images: ${count}`);
+    });
+}
+function fixupUserPhotos() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const users = yield admin.database()
+            .ref('users')
+            .once('value');
+        let count = 0;
+        users.forEach((user) => {
+            if (user.val().profile && user.val().profile.photo) {
+                const photo = user.val().profile.photo;
+                if (photo.source === 'aircandi.images') {
+                    count++;
+                    const path = `profile/photo/source`;
+                    console.log(`Updating photo source: ${photo.filename}`);
+                    console.log(`Path: ${user.ref}/${path}`);
+                    user.ref.child(path).set('google-storage');
+                }
+            }
+            return false;
+        });
+        console.log(`Total images: ${count}`);
+    });
+}
+function fixupGroupPhotos() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const groups = yield admin.database()
+            .ref('groups')
+            .once('value');
+        let count = 0;
+        groups.forEach((group) => {
+            if (group.val().photo) {
+                const photo = group.val().photo;
+                if (photo.source === 'aircandi.images') {
+                    count++;
+                    const path = `photo/source`;
+                    console.log(`Updating photo source: ${photo.filename}`);
+                    console.log(`Path: ${group.ref}/${path}`);
+                    group.ref.child(path).set('google-storage');
+                }
+            }
+            return false;
+        });
+        console.log(`Total images: ${count}`);
+    });
+}
+function fixupChannelPhotos() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const bucket = gcs.bucket('patchr-images');
+        const groups = yield admin.database()
+            .ref('group-channels')
+            .once('value');
+        let count = 0;
+        groups.forEach((group) => {
+            group.forEach((channel) => {
+                if (channel.val().photo) {
+                    const photo = channel.val().photo;
+                    if (photo.source === 'aircandi.images') {
+                        count++;
+                        const path = `photo/source`;
+                        console.log(`Updating photo source: ${photo.filename}`);
+                        console.log(`Path: ${channel.ref}/${path}`);
+                        // channel.ref.child(path).set('google-storage')
+                    }
+                    else {
+                        bucket.file(photo.filename).exists().then((data) => {
+                            const exists = data[0];
+                            if (!exists) {
+                                console.log(`Clear broken photo: ${photo.filename}`);
+                                // channel.ref.child('photo').remove()
+                            }
+                        });
+                    }
+                }
                 return false;
             });
             return false;

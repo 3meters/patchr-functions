@@ -25,7 +25,7 @@ run()
 /* jshint -W098 */
 async function run() {
   console.log('Photo fixup running...')
-  // await fixupPhotos()
+  await fixupChannelPhotos()
 }
 
 async function transferImages() {
@@ -57,7 +57,7 @@ async function transferImages() {
     return false
   })
 
-  async.eachLimit(filenames, 5, (filename, next)=> {
+  async.eachLimit(filenames, 5, (filename, next) => {
     const remoteWriteStream: NodeJS.WritableStream = bucket.file(filename).createWriteStream(metadata)
     request
       .get(`https://s3-us-west-2.amazonaws.com/aircandi-images/${filename}`)
@@ -69,14 +69,13 @@ async function transferImages() {
   }, (err) => {
     if (err) {
       console.log(`A transfer failed`)
-    }
-    else {
+    } else {
       console.log(`Total images: ${count}`)
     }
   })
 }
 
-async function fixupPhotos() {
+async function fixupMessagePhotos() {
   const groups: DataSnapshot = await admin.database()
     .ref('group-messages')
     .once('value')
@@ -93,13 +92,89 @@ async function fixupPhotos() {
                 const path = `attachments/${prop}/photo/source`
                 console.log(`Updating photo source: ${photo.filename}`)
                 console.log(`Path: ${message.ref}/${path}`)
-                message.ref.child(path).set('google-storage')
+                // message.ref.child(path).set('google-storage')
               }
             }
           }
         }
         return false
       })
+      return false
+    })
+    return false
+  })
+  console.log(`Total images: ${count}`)
+}
+
+async function fixupUserPhotos() {
+  const users: DataSnapshot = await admin.database()
+    .ref('users')
+    .once('value')
+  let count = 0
+  users.forEach((user) => {
+    if (user.val().profile && user.val().profile.photo) {
+      const photo = user.val().profile.photo
+      if (photo.source === 'aircandi.images') {
+        count++
+        const path = `profile/photo/source`
+        console.log(`Updating photo source: ${photo.filename}`)
+        console.log(`Path: ${user.ref}/${path}`)
+        user.ref.child(path).set('google-storage')
+      }
+    }
+    return false
+  })
+  console.log(`Total images: ${count}`)
+}
+
+async function fixupGroupPhotos() {
+  const groups: DataSnapshot = await admin.database()
+    .ref('groups')
+    .once('value')
+  let count = 0
+  groups.forEach((group) => {
+    if (group.val().photo) {
+      const photo = group.val().photo
+      if (photo.source === 'aircandi.images') {
+        count++
+        const path = `photo/source`
+        console.log(`Updating photo source: ${photo.filename}`)
+        console.log(`Path: ${group.ref}/${path}`)
+        group.ref.child(path).set('google-storage')
+      }
+    }
+    return false
+  })
+  console.log(`Total images: ${count}`)
+}
+
+async function fixupChannelPhotos() {
+  const bucket = gcs.bucket('patchr-images')
+  const groups: DataSnapshot = await admin.database()
+    .ref('group-channels')
+    .once('value')
+  let count = 0
+  groups.forEach((group) => {
+    group.forEach((channel) => {
+      if (channel.val().photo) {
+        const photo = channel.val().photo
+        if (photo.source === 'aircandi.images') {
+          count++
+          const path = `photo/source`
+          console.log(`Updating photo source: ${photo.filename}`)
+          console.log(`Path: ${channel.ref}/${path}`)
+          // channel.ref.child(path).set('google-storage')
+        }
+        else {
+          bucket.file(photo.filename).exists().then((data) => {
+            const exists = data[0]
+            if (!exists) {
+              console.log(`Clear broken photo: ${photo.filename}`)
+              // channel.ref.child('photo').remove()
+            }
+          })
+        }
+      }
       return false
     })
     return false
