@@ -20,6 +20,7 @@ async function created(current: shared.DeltaSnapshot) {
   console.log(`Invite created: ${current.key}`)
 
   try {
+    invite.id = current.key
     await sendInviteEmail(invite)
   } catch (err) {
     console.error(`Error sending invite email: ${err}`)
@@ -33,20 +34,17 @@ async function sendInviteEmail(invite: any) {
   const fromEmail = new helper.Email('noreply@patchr.com', 'Patchr')
 
   mail.setFrom(fromEmail)
-  if (invite.role === 'guest') {
+  if (invite.role === 'reader') {
     mail.setTemplateId('20036bc8-5a3c-4df2-8c3c-ee99df3b047f')
   } else {
     mail.setTemplateId('de969f30-f3a0-4aa3-8f91-9d349831f0f9')
   }
 
   personalization.addTo(new helper.Email(invite.email))
-  personalization.addSubstitution(new helper.Substitution('-group.title-', invite.group.title))
+  personalization.addSubstitution(new helper.Substitution('-channel.name-', invite.channel.name))
   personalization.addSubstitution(new helper.Substitution('-user.title-', invite.inviter.title))
   personalization.addSubstitution(new helper.Substitution('-user.email-', invite.inviter.email))
   personalization.addSubstitution(new helper.Substitution('-link-', invite.link))
-  if (invite.channel) {
-    personalization.addSubstitution(new helper.Substitution('-channel.name-', invite.channel.name))
-  }
 
   mail.addPersonalization(personalization)
 
@@ -60,6 +58,7 @@ async function sendInviteEmail(invite: any) {
 
   try {
     const response = await sendgrid.API(request)
+    await shared.database.ref(`invites/${invite.id}`).remove()
     console.log(`SendGrid: invite email sent to: ${invite.email}`)
   } catch (err) {
     const statusCode = err.response.statusCode

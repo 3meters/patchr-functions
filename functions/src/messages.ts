@@ -24,22 +24,20 @@ async function created(current: shared.DeltaSnapshot) {
 
   const message = current.val()
   const channelId: string = message.channel_id
-  const groupId: string = message.group_id
   const messageId: string = current.key
   const createdBy: string = message.created_by
   console.log(`Message created: ${messageId}`)
 
   /* Gather list of channel members */
-  const memberIds: string[] = await shared.getMembersToNotify(groupId, channelId, [message.created_by])
+  const memberIds: string[] = await shared.getMembersToNotify(channelId, [message.created_by])
   if (memberIds.length === 0) { return }
 
   console.log('Channel members to notify: ' + memberIds.length)
 
   const username: string = (await shared.getUser(createdBy)).val().username
-  const channelName: string = (await shared.getChannel(groupId, channelId)).val().name
+  const channelName: string = (await shared.getChannel(channelId)).val().name
   const data = {
     user_id: createdBy,
-    group_id: groupId,
     channel_id: channelId,
     message_id: messageId,
   }
@@ -71,8 +69,8 @@ async function created(current: shared.DeltaSnapshot) {
 
   async function notify(memberId: string, installs: any[]) {
     const unreads: number = ((await shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1
-    await shared.database.ref(`unreads/${memberId}/${groupId}/${channelId}/${messageId}`).set(true)
-    const membership: shared.DataSnapshot = await shared.database.ref(`member-channels/${memberId}/${groupId}/${channelId}`).once('value')
+    await shared.database.ref(`unreads/${memberId}/${channelId}/${messageId}`).set(true)
+    const membership: shared.DataSnapshot = await shared.database.ref(`member-channels/${memberId}/${channelId}`).once('value')
     /* Bump sort priority */
     if (membership.val().priority !== 0) {
       const timestamp = membership.val().joined_at // not a real timestamp, shortened to 10 digits
@@ -111,17 +109,16 @@ async function changed(previous: DeltaSnapshot, current: DeltaSnapshot) {
 
 async function deleted(previous: DeltaSnapshot) {
   const channelId: string =  previous.val().channel_id
-  const groupId: string = previous.val().group_id
   const messageId: string = previous.key
   const photo: any = shared.getPhotoFromMessage(previous.val())
   console.log(`Message deleted: ${messageId}`)
   
   /* Clear unread flag for each member */
-  const memberIds: string[] = await shared.getMemberIds(groupId, channelId)
+  const memberIds: string[] = await shared.getMemberIds(channelId)
   if (memberIds.length > 0) { 
     const updates = {}
     memberIds.forEach((memberId) => {
-      updates[`unreads/${memberId}/${groupId}/${channelId}/${messageId}`] = null
+      updates[`unreads/${memberId}/${channelId}/${messageId}`] = null
     })
     await shared.database.ref().update(updates)
   }

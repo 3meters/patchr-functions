@@ -19,9 +19,9 @@ export async function onWriteMember(event: shared.DatabaseEvent) {
 
 async function created(params: any, current: shared.DeltaSnapshot) {
   const membership = current.val()
-  console.log(`Member: ${params.userId} added to channel: ${params.channelId} in group: ${params.groupId}`)
+  console.log(`Member: ${params.userId} added to channel: ${params.channelId}`)
   try {
-    await shared.database.ref(`member-channels/${params.userId}/${params.groupId}/${params.channelId}`).set(membership)
+    await shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership)
   } catch (err) {
     console.error('Error adding channel member: ', err)
     return
@@ -32,7 +32,7 @@ async function changed(params: any, previous: DeltaSnapshot, current: DeltaSnaps
   const membership = current.val()
   console.log(`Membership of: ${params.userId} updated for channel: ${params.channelId}`)
   try {
-    await shared.database.ref(`member-channels/${params.userId}/${params.groupId}/${params.channelId}`).set(membership)
+    await shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership)
   } catch (err) {
     console.error('Error updating channel member: ', err)
     return
@@ -40,10 +40,10 @@ async function changed(params: any, previous: DeltaSnapshot, current: DeltaSnaps
 }
 
 async function deleted(params: any, previous: DeltaSnapshot) {
-  console.log(`Member: ${params.userId} removed from channel: ${params.channelId} in group: ${params.groupId}`)
+  console.log(`Member: ${params.userId} removed from channel: ${params.channelId}`)
   const updates = {}
-  updates[`member-channels/${params.userId}/${params.groupId}/${params.channelId}`] = null // No trigger
-  updates[`unreads/${params.userId}/${params.groupId}/${params.channelId}`] = null // Delete trigger that updates counter
+  updates[`member-channels/${params.userId}/${params.channelId}`] = null // No trigger
+  updates[`unreads/${params.userId}/${params.channelId}`] = null // Delete trigger that updates counter
   try {
     await shared.database.ref().update(updates)
   } catch (err) {

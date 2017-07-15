@@ -2,6 +2,7 @@
  * User processing
  */
 import * as shared from './shared'
+import * as utils from './utils'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
 type DeltaSnapshot = shared.DeltaSnapshot
@@ -34,15 +35,44 @@ export async function createUser(task: any) {
     modified_at: admin.database.ServerValue.TIMESTAMP,
     username: req.username,
   }
+  const userId = req.user_id
+  const timestamp = Date.now()
+  const updates = {}
+  /* Add default general channel */
+  const generalId = `ch-${utils.generateRandomId()}`
+  const general = {
+    archived: false,
+    created_at: timestamp,
+    created_by: userId,
+    general: true,
+    name: 'general',
+    owned_by: userId,
+    purpose: 'This channel is for messaging and announcements to the whole group. All group members are in this channel.',
+  }
+  updates[`channels/${generalId}`] = general
+
+  /* Add default chatter channel */
+  const chatterId = `ch-${utils.generateRandomId()}`
+  const chatter = {
+    archived: false,
+    created_at: timestamp,
+    created_by: userId,
+    general: true,
+    name: 'chatter',
+    owned_by: userId,
+    purpose: 'The perfect place for crazy talk that you\'d prefer to keep off the other channels.',
+  }
+  updates[`channels/${chatterId}`] = chatter
+
   console.log(`Creating user: ${req.user_id}`)
 
   try {
     await shared.database.ref(`users/${req.user_id}`).set(user) // Validation will catch duplicate username
+    await shared.database.ref().update(updates)
     if (task.adminRef) {
       await task.adminRef.child('response').set({ result: 'ok' })
     }
-  } 
-  catch (err) {
+  } catch (err) {
     console.error(`Error creating user: ${err}`)
     if (task.adminRef) {
       await task.adminRef.child('response').set({ error: `Error creating user: ${err.message}` })

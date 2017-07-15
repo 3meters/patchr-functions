@@ -22,46 +22,33 @@ const gcs = require('@google-cloud/storage')()
 const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1]
 
-export async function getMemberIds(groupId: string, channelId: string|null) {
-  if (!channelId) {
-    const members: DataSnapshot = await database
-      .ref(`group-members/${groupId}`)
-      .once('value')
-    const values: string[] = []
-    members.forEach((member) => {
-      if (member.key) { values.push(member.key)}
-      return false
-    })
-    return values
-  }
-  else {
-    const members: DataSnapshot = await database
-      .ref(`group-channel-members/${groupId}/${channelId}`)
-      .once('value')
-    const values: string[] = []
-    members.forEach((member) => {
-      if (member.key) { values.push(member.key)}
-      return false
-    })
-    return values
-  }
-}
-
-export async function getMemberChannelIds(userId: string, groupId: string) {
-  const memberships: DataSnapshot = await database
-    .ref(`member-channels/${userId}/${groupId}`)
+export async function getMemberIds(channelId: string | null) {
+  const members: DataSnapshot = await database
+    .ref(`channel-members/${channelId}`)
     .once('value')
   const values: string[] = []
-  memberships.forEach((membership) => {
-    if (membership.key) { values.push(membership.key)}
+  members.forEach((member) => {
+    if (member.key) { values.push(member.key) }
     return false
   })
   return values
 }
 
-export async function getMembersToNotify(groupId: string, channelId: string, exclude: string[]) {
+export async function getMemberChannelIds(userId: string) {
+  const memberships: DataSnapshot = await database
+    .ref(`member-channels/${userId}`)
+    .once('value')
+  const values: string[] = []
+  memberships.forEach((membership) => {
+    if (membership.key) { values.push(membership.key) }
+    return false
+  })
+  return values
+}
+
+export async function getMembersToNotify(channelId: string, exclude: string[]) {
   const members: DataSnapshot = await database
-    .ref(`group-channel-members/${groupId}/${channelId}`)
+    .ref(`channel-members/${channelId}`)
     .once('value')
   const values: string[] = []
   members.forEach((member) => {
@@ -80,16 +67,9 @@ export async function getUser(userId: string) {
   return value
 }
 
-export async function getChannel(groupId: string, channelId: string) {
+export async function getChannel(channelId: string) {
   const value: DataSnapshot = await database
-    .ref(`group-channels/${groupId}/${channelId}`)
-    .once('value')
-  return value
-}
-
-export async function getGroup(groupId: string) {
-  const value: DataSnapshot = await database
-    .ref(`groups/${groupId}`)
+    .ref(`channels/${channelId}`)
     .once('value')
   return value
 }
@@ -133,31 +113,10 @@ export function channelMemberMap(userId, timestamp, priorityIndex, role) {
     index_priority_joined_at: index,
     index_priority_joined_at_desc: indexReversed,
     muted: false,
-    priority: priorityIndex,
-    role: role,
-    starred: false,
-  }
-  return membership
-}
-
-export function groupMemberMap(userId, timestamp, priorityIndex, role, email) {
-  const joinedAt = timestamp / 1000 // shorten to 10 digits
-  const index = parseInt('' + priorities[priorityIndex] + timestamp)
-  const indexReversed = parseInt('' + priorities_reversed[priorityIndex] + timestamp) * -1
-  const membership: any = {
-    created_at: timestamp,
-    created_by: userId,
-    disabled: false,
-    joined_at: joinedAt, // Not a real unix epoch timestamp, only 10 digits instead of 13
-    joined_at_desc: joinedAt * -1,
-    index_priority_joined_at: index,
-    index_priority_joined_at_desc: indexReversed,
     notifications: 'all',
     priority: priorityIndex,
     role: role,
-  }
-  if (email) {
-    membership.email = email
+    starred: false,
   }
   return membership
 }

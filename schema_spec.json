@@ -1,0 +1,167 @@
+{
+  "clients": {
+    "android": 134,
+    "ios": 127
+  },
+  "counters": {
+    "$user": {
+      "unreads": 5
+    }
+  },
+  "channels": {
+    "$channel": {
+      "archived": false, // Locked, doesn't show in channels for group, searchable' 
+      "created_by": "$user",
+      "created_at": 1452570145564,
+      "general": false, // general channel can't be deleted
+      "name": "top-secret", // 50 chars max, only lowercase|numbers|_-
+      "owned_by": "$user",
+      "purpose": "Discuss dad's retirement party",
+      "photo": {
+        "filename": "channel_photo.jpg",
+        "width": 600,
+        "height": 600,
+        "source": "google-storage",
+        "taken_at": 1472570145564
+      }
+    }
+  },
+  "channel-members": {
+    "$channel": {
+      "$user": {
+        "created_by": "$user",
+        "created_at": 1452570145564,
+        "index_priority_joined_at": 2501452570145,
+        "index_priority_joined_at_desc": -2101452570145, // prepend priority reversed bucket
+        "joined_at": 1452570145,
+        "joined_at_desc": -1452570145,
+        "muted": true, // Convenience: duped from member-channels to support remote notifications
+        "priority": 250, // 150=owner, 250=member, 350=guest
+        "notifications": "all|none|direct_only",
+        "role": "reader|editor"
+      }
+    }
+  },
+  "channel-messages": {
+    "$channel": {
+      "$message": {
+        "channel": "$channel",
+        "text": "When are you going to escape?", // optional
+        "attachments": { // optional
+          "$attachment1": {
+            "title": "Going all the way",
+            "photo": {
+              "filename": "$photo.jpg",
+              "width": 600,
+              "height": 600,
+              "source": "google-storage",
+              "taken_at": 1472570145564
+            }
+          },
+          "$attachment2": {
+            "animated": {
+              "filename": "$animated.gif",
+              "width": 600,
+              "height": 600,
+              "source": "google-storage",
+              "taken_at": 1472570145564
+            }
+          }
+        },
+        "source": "user|system",
+        "reactions": {
+          ":thumbsup:": {
+            "$user": true
+          },
+          ":heart:": {
+            "$user": true
+          }
+        },
+        "comments": {
+          "$message": {
+            "created_by": "$user",
+            "created_at": 1452570145564
+          }
+        },
+        "created_by": "$user",
+        "created_at": 1452570145564,
+        "created_at_desc": -1452570145564,
+        "modified_by": "$user",
+        "modified_at": 1472570145564,
+        "taken_at": 1472570145564 // optional. promote from attachment to support sorting
+      },
+      "$message": {
+        "event": "channel_join|channel_leave", // optional
+        "channel": "$channel",
+        "text": "<$user|jaymassena> has joined the channel",
+        "created_by": "$user",
+        "created_at": 1452570145564,
+        "created_at_desc": -1452570145564,
+        "modified_by": "$user",
+        "modified_at": 1472570145564
+      }
+    }
+  },
+  "installs": {
+    "$user": {
+      "$install": true
+    }
+  },
+  "member-channels": {
+    "$user": {
+      "$channel": { // Remove when archived
+        "muted": false,
+        "starred": false,
+        "archived": false,
+        "role": "reader|editor",
+        /* unread=index:0=bucket:1, 
+            starred=index:1/bucket:2, 
+            general=index:2/bucket:3, 
+            chatter=index:3/bucket:4, 
+            default=index:4/bucket:5 */
+        "priority": 0, // Index
+        "joined_at": 1452570145,
+        "joined_at_desc": -1452570145,
+        "index_priority_joined_at": 2501452570145,
+        "index_priority_joined_at_desc": -2101452570145
+      }
+    }
+  },
+  "typing": {
+    "$channel": {
+      "$user": "jayminator"
+    }
+  },
+  "unreads": {
+    "$user": {
+      "$channel": {
+        "$message": true
+      }
+    }
+  },
+  "usernames": {
+    "$username": "$userId"
+  },
+  "users": {
+    "$user": {
+      "email": "jay@3meters.com",
+      "presence": "true|1452570145564", // timestamp when last online
+      "created_at": 1472570145564,
+      "modified_at": 1472570145564,
+      "username": "jayminator", // 21 chars or less, lowercase|numbers|_-
+      "profile": {
+        "first_name": "Jay",
+        "last_name": "Massena",
+        "full_name": "Jay Massena",
+        "phone": "+1 (425) 633 4695",
+        "photo": {
+          "filename": "profile_photo.jpg",
+          "width": 600,
+          "height": 600,
+          "source": "google-storage",
+          "taken_at": 1472570145564
+        }
+      }
+    }
+  }
+}

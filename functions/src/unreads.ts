@@ -32,12 +32,9 @@ export async function onWriteUnreadsCounter(event: shared.DatabaseEvent) {
 
   try {
     let count = 0
-    const groups: DataSnapshot = await unreadsRef.once('value')
-    groups.forEach((group) => {
-      group.forEach((channel) => {
-        count += channel.numChildren()
-        return false
-      })
+    const channels: DataSnapshot = await unreadsRef.once('value')
+    channels.forEach((channel) => {
+      count += channel.numChildren()
       return false
     })
     await countRef.set(count)
