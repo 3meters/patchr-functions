@@ -5,39 +5,19 @@
 exports.generateData = function generateData(exclude) {
   let data = {}
   let exclusions = exclude || {}
-  if (!exclusions.channelNames) addChannelNames(data)
   if (!exclusions.clients) addClients(data)
   if (!exclusions.counters) addCounters(data)
-  if (!exclusions.groupChannelMembers) addGroupChannelMembers(data)
-  if (!exclusions.groupChannels) addGroupChannels(data)
-  if (!exclusions.groupMembers) addGroupMembers(data)
-  if (!exclusions.groupMessages) addGroupMessages(data)
-  if (!exclusions.groups) addGroups(data)
+  if (!exclusions.channelMembers) addChannelMembers(data)
+  if (!exclusions.channels) addChannels(data)
+  if (!exclusions.channelMessages) addChannelMessages(data)
   if (!exclusions.installs) addInstalls(data)
   if (!exclusions.invites) addInvites(data)
   if (!exclusions.memberChannels) addMemberChannels(data)
-  if (!exclusions.memberGroups) addMemberGroups(data)
   if (!exclusions.tasks) addTasks(data)
   if (!exclusions.typing) addTyping(data)
   if (!exclusions.unreads) addUnreads(data)
   if (!exclusions.usernames) addUsernames(data)
   if (!exclusions.users) addUsers(data)
-  return data
-}
-
-function addChannelNames(data) {
-  data["channel-names"] = {
-    "gr-treehouse": {
-      "general": "ch-generalxx",
-      "chatter": "ch-chatterxx",
-      "birthday-surprise": "ch-privatexx",
-      "trips": "ch-tripsxxxx"
-    },
-    "gr-janetimex": {
-      "general": "ch-generalxx",
-      "chatter": "ch-chatterxx"
-    }
-  }
   return data
 }
 
@@ -61,334 +41,190 @@ function addCounters(data) {
   return data
 }
 
-function addGroupChannelMembers(data) {
-  data["group-channel-members"] = {
-    "gr-treehouse": {
-      "ch-generalxx": {
-        "us-tarzanxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-tarzanxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        },
-        "us-janexxxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        },
-        "us-maryxxxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-maryxxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        }
-      },
-      "ch-chatterxx": {
-        "us-tarzanxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-tarzanxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        },
-        "us-janexxxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        }
-      },
-      "ch-privatexx": {
-        "us-janexxxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        },
-        "us-maryxxxxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-maryxxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        }
-      }
-    }
-  }
-  return data
-}
-
-function addGroupChannels(data) {
-  data["group-channels"] = {
-    "gr-treehouse": {
-      "ch-generalxx": {
-        "archived": false,
-        "created_at": 1481392125882,
-        "created_by": "us-tarzanxxx",
-        "general": true,
-        "group_id": "gr-treehouse",
-        "name": "chatter",
-        "owned_by": "us-tarzanxxx",
-        "purpose": "This channel is for messaging and announcements to the whole group. All group members are in this channel.",
-        "type": "channel",
-        "visibility": "open"
-      },
-      "ch-chatterxx": {
-        "archived": false,
-        "created_at": 1481392125882,
-        "created_by": "us-tarzanxxx",
-        "general": true,
-        "group_id": "gr-treehouse",
-        "name": "general",
-        "owned_by": "us-tarzanxxx",
-        "purpose": "The perfect place for crazy talk that you'd prefer to keep off the other channels.",
-        "type": "channel",
-        "visibility": "open"
-      },
-      "ch-privatexx": {
-        "archived": false,
-        "created_at": 1410520607434,
-        "created_by": "us-janexxxxx",
-        "general": false,
-        "group_id": "gr-treehouse",
-        "name": "birthday-surprise",
-        "owned_by": "us-janexxxxx",
-        "photo": {
-          "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
-          "height": 1280,
-          "source": "google-storage",
-          "width": 960
-        },
-        "purpose": "Surprise party for Tarzan!",
-        "type": "channel",
-        "visibility": "private"
-      }
-    },
-    "gr-janetimex": {
-      "ch-generalxx": {
-        "archived": false,
-        "created_at": 1481392125882,
-        "created_by": "us-janexxxxx",
-        "general": true,
-        "group_id": "gr-janetimex",
-        "name": "general",
-        "owned_by": "us-janexxxxx",
-        "purpose": "This channel is for messaging and announcements to the whole group. All group members are in this channel.",
-        "type": "channel",
-        "visibility": "open"
-      },
-      "ch-chatterxx": {
-        "archived": false,
-        "created_at": 1481392125882,
-        "created_by": "us-janexxxxx",
-        "general": false,
-        "group_id": "gr-janetimex",
-        "name": "general",
-        "owned_by": "us-janexxxxx",
-        "purpose": "The perfect place for crazy talk that you'd prefer to keep off the other channels.",
-        "type": "channel",
-        "visibility": "open"
-      }
-    }
-  }
-  return data
-}
-
-function addGroupMembers(data) {
-  data["group-members"] = {
-    "gr-treehouse": {
+function addChannelMembers(data) {
+  data["channel-members"] = {
+    "ch-generalxx": {
       "us-tarzanxxx": {
+        "code": "abcdefghijkl",
         "created_at": 1481392125,
         "created_by": "us-tarzanxxx",
-        "disabled": false,
-        "email": "tarzan@jungle.com",
-        "index_priority_joined_at": 41481392125,
-        "index_priority_joined_at_desc": -61481392125,
-        "joined_at": 1481392125,
-        "joined_at_desc": -1481392125,
-        "notifications": "all",
-        "priority": 4,
-        "role": "member"
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "owner",
+        "starred": false
       },
       "us-janexxxxx": {
+        "code": "abcdefghijkl",
         "created_at": 1481392125,
         "created_by": "us-janexxxxx",
-        "disabled": false,
-        "email": "jane@jungle.com",
-        "index_priority_joined_at": 41481392125,
-        "index_priority_joined_at_desc": -61481392125,
-        "joined_at": 1481392125,
-        "joined_at_desc": -1481392125,
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
         "notifications": "all",
-        "priority": 4,
-        "role": "owner"
+        "priority": 5,
+        "role": "editor",
+        "starred": false
       },
       "us-maryxxxxx": {
-        "created_at": 1481392125839,
+        "code": "abcdefghijkl",
+        "created_at": 1481392125,
         "created_by": "us-maryxxxxx",
-        "disabled": false,
-        "email": "mary@jungle.com",
-        "index_priority_joined_at": 41481392125839,
-        "index_priority_joined_at_desc": -61481392125839,
-        "joined_at": 1481392125839,
-        "joined_at_desc": -1481392125839,
-        "notifications": "all",
-        "priority": 4,
-        "role": "guest"
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "editor",
+        "starred": false
       }
     },
-    "gr-janetimex": {
-      "us-maryxxxxx": {
-        "created_at": 1484416000,
-        "created_by": "us-maryxxxxx",
-        "disabled": false,
-        "email": "jane@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
+    "ch-chatterxx": {
+      "us-tarzanxxx": {
+        "code": "abcdefghijkl",
+        "created_at": 1481392125,
+        "created_by": "us-tarzanxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
         "notifications": "all",
-        "priority": 6,
-        "role": "member"
+        "priority": 5,
+        "role": "owner",
+        "starred": false
       },
-      "us-cheetaxxx": {
-        "created_at": 1484416000,
-        "created_by": "us-cheetaxxx",
-        "disabled": false,
-        "email": "cheeta@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
+      "us-janexxxxx": {
+        "code": "abcdefghijkl",
+        "created_at": 1481392125,
+        "created_by": "us-janexxxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
         "notifications": "all",
-        "priority": 6,
-        "role": "member"
+        "priority": 5,
+        "role": "editor",
+        "starred": false
+      }
+    },
+    "ch-privatexx": {
+      "us-janexxxxx": {
+        "code": "abcdefghijkl",
+        "created_at": 1481392125,
+        "created_by": "us-janexxxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "notifications": "all",
+        "priority": 5,
+        "role": "owner",
+        "starred": false
+      },
+      "us-maryxxxxx": {
+        "code": "abcdefghijkl",
+        "created_at": 1481392125,
+        "created_by": "us-maryxxxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "notifications": "all",
+        "priority": 5,
+        "role": "reader",
+        "starred": false
       }
     }
   }
   return data
 }
 
-function addGroupMessages(data) {
-  data["group-messages"] = {
-    "gr-treehouse": {
-      "ch-generalxx": {
-        "me-messagex1": {
-          "attachments": {
-            "at-attachxx1": {
-              "photo": {
-                "filename": "20151010_181726_0616_210973.jpg",
-                "height": 768,
-                "source": "google-storage",
-                "width": 1024,
-                "uploading": true,
-                "taken_at": 1444526248003,
-                "location": {
-                  "lat": 47.593649999999997,
-                  "lng": -122.15950833333333
-                },
-              }
-            }
-          },
-          "channel_id": "ch-generalxx",
-          "created_at": 1444526248003,
-          "created_at_desc": -1444526248003,
-          "created_by": "us-tarzanxxx",
-          "group_id": "gr-treehouse",
-          "modified_at": 1444526248033,
-          "modified_by": "us-tarzanxxx",
-          "text": "Hey, what do guy do to get banana?"
-        }
+function addChannels(data) {
+  data["channels"] = {
+    "ch-generalxx": {
+      "code": "abcdefghijkl",
+      "created_at": 1481392125882,
+      "created_by": "us-tarzanxxx",
+      "general": true,
+      "name": "chatter",
+      "owned_by": "us-tarzanxxx",
+    },
+    "ch-chatterxx": {
+      "code": "abcdefghijkl",
+      "created_at": 1481392125882,
+      "created_by": "us-tarzanxxx",
+      "general": true,
+      "name": "general",
+      "owned_by": "us-tarzanxxx",
+      "title": "General",
+    },
+    "ch-privatexx": {
+      "code": "abcdefghijkl",
+      "created_at": 1410520607434,
+      "created_by": "us-janexxxxx",
+      "general": false,
+      "name": "birthday-surprise",
+      "owned_by": "us-janexxxxx",
+      "photo": {
+        "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
+        "height": 1280,
+        "source": "google-storage",
+        "width": 960
       },
-      "ch-privatexx": {
-        "me-messagex1": {
-          "channel_id": "ch-privatexx",
-          "created_at": 1444526248003,
-          "created_at_desc": -1444526248003,
-          "created_by": "us-janexxxxx",
-          "group_id": "gr-treehouse",
-          "modified_at": 1444526248033,
-          "modified_by": "us-janexxxxx",
-          "text": "Maybe for Tarzan/'s birthday, we should give him that special night he always wanted.",
-          "reactions": {
-            ":thumbsup:": {
-              "us-maryxxxxx": true
+      "purpose": "Surprise party for Tarzan!",
+      "title": "Birthday Surprise",
+    },
+  }
+  return data
+}
+
+function addChannelMessages(data) {
+  data["channel-messages"] = {
+    "ch-generalxx": {
+      "me-messagex1": {
+        "attachments": {
+          "at-attachxx1": {
+            "photo": {
+              "filename": "20151010_181726_0616_210973.jpg",
+              "height": 768,
+              "source": "google-storage",
+              "width": 1024,
+              "uploading": true,
+              "taken_at": 1444526248003,
+              "location": {
+                "lat": 47.593649999999997,
+                "lng": -122.15950833333333
+              },
             }
+          }
+        },
+        "channel_id": "ch-generalxx",
+        "created_at": 1444526248003,
+        "created_at_desc": -1444526248003,
+        "created_by": "us-tarzanxxx",
+        "modified_at": 1444526248033,
+        "modified_by": "us-tarzanxxx",
+        "text": "Hey, what do guy do to get banana?"
+      }
+    },
+    "ch-privatexx": {
+      "me-messagex1": {
+        "channel_id": "ch-privatexx",
+        "created_at": 1444526248003,
+        "created_at_desc": -1444526248003,
+        "created_by": "us-janexxxxx",
+        "modified_at": 1444526248033,
+        "modified_by": "us-janexxxxx",
+        "text": "Maybe for Tarzan/'s birthday, we should give him that special night he always wanted.",
+        "reactions": {
+          ":thumbsup:": {
+            "us-maryxxxxx": true
           }
         }
       }
-    }
-  }
-  return data
-}
-
-function addGroups(data) {
-  data.groups = {
-    "gr-treehouse": {
-      "created_at": 1481392125839,
-      "created_by": "us-tarzanxxx",
-      "default_channels": ["ch-generalxx", "ch-chatterxx"],
-      "modified_at": 1481392125839,
-      "modified_by": "us-tarzanxxx",
-      "owned_by": "us-tarzanxxx",
-      "title": "Treehouse"
-    },
-    "gr-janetimex": {
-      "created_at": 1481392125839,
-      "created_by": "us-janexxxxx",
-      "default_channels": ["ch-generalxx", "ch-chatterxx"],
-      "modified_at": 1481392125839,
-      "modified_by": "us-janexxxxx",
-      "owned_by": "us-janexxxxx",
-      "title": "Jane Time"
     }
   }
   return data
@@ -411,197 +247,24 @@ function addInstalls(data) {
 
 function addInvites(data) {
   data.invites = {
-    "gr-treehouse": {
-      "us-janexxxxx": {
-        "in-treehous1": {
-          "channel": {
-            "id": "ch-privatexx",
-            "name": "birthday-surprise"
-          },
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "mary@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "guest",
-          "status": "pending"
-        },
-        "in-treehous2": {
-          "accepted_at": 1484525797938,
-          "accepted_by": "us-maryxxxxx",
-          "channel": {
-            "id": "ch-privatexx",
-            "name": "birthday-surprise"
-          },
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "cheeta@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "guest",
-          "status": "accepted"
-        },
-        "in-treehous3": {
-          "channel": {
-            "id": "ch-chatterxx",
-            "name": "chatter"
-          },
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "mary@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "member",
-          "status": "pending"
-        },
-        "in-treehous4": {
-          "channel": {
-            "id": "ch-privatexx",
-            "name": "birthday-surprise"
-          },
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "cheeta@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "guest",
-          "status": "pending"
-        },
-        "in-treehous5": {
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "cheeta@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "member",
-          "status": "pending"
-        },
+    "in-treehous1": {
+      "channel": {
+        "id": "ch-privatexx",
+        "title": "Birthday Surprise"
       },
-      "us-tarzanxxx": {
-        "in-treehous1": {
-          "channel": {
-            "id": "ch-privatexx",
-            "name": "birthday-surprise"
-          },
-          "created_at": 1484425797938,
-          "created_by": "us-tarzanxxx",
-          "email": "cheeta@jungle.com",
-          "group": {
-            "id": "gr-treehouse",
-            "title": "Treehouse"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "tarzan@jungle.com",
-            "id": "us-tarzanxxx",
-            "title": "Tarzan",
-            "username": "tarzan"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "guest",
-          "status": "pending"
-        },        
-      }
-    },
-    "gr-janetimex": {
-      "us-janexxxxx": {
-        "in-janetime1": {
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "mary@jungle.com",
-          "group": {
-            "id": "gr-janetimex",
-            "title": "Jane Time"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "member",
-          "status": "pending"
-        },
-        "in-janetime2": {
-          "created_at": 1484425797938,
-          "created_by": "us-janexxxxx",
-          "email": "mary@jungle.com",
-          "group": {
-            "id": "gr-janetimex",
-            "title": "Jane Time"
-          },
-          "invited_at": 1484425797938,
-          "invited_at_desc": -1484425797938,
-          "inviter": {
-            "email": "jane@jungle.com",
-            "id": "us-janexxxxx",
-            "title": "Jane Johnson-Smith",
-            "username": "jane"
-          },
-          "link": "https://bvvb.app.link/X3Kj57ZbWz",
-          "role": "member",
-          "status": "accepted"
-        }
-      }
+      "created_at": 1484425797938,
+      "created_by": "us-janexxxxx",
+      "email": "mary@jungle.com",
+      "invited_at": 1484425797938,
+      "invited_at_desc": -1484425797938,
+      "inviter": {
+        "email": "jane@jungle.com",
+        "id": "us-janexxxxx",
+        "title": "Jane Johnson-Smith",
+        "username": "jane"
+      },
+      "link": "https://bvvb.app.link/X3Kj57ZbWz",
+      "role": "reader",
     }
   }
   return data
@@ -610,157 +273,75 @@ function addInvites(data) {
 function addMemberChannels(data) {
   data["member-channels"] = {
     "us-tarzanxxx": {
-      "gr-treehouse": {
-        "ch-generalxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-tarzanxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        },
-        "ch-chatterxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-tarzanxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        }
-      }
-    },
-    "us-janexxxxx": {
-      "gr-treehouse": {
-        "ch-generalxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        },
-        "ch-chatterxx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        },
-        "ch-privatexx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-janexxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "owner",
-          "starred": false
-        }
-      }
-    },
-    "us-maryxxxxx": {
-      "gr-treehouse": {
-        "ch-privatexx": {
-          "archived": false,
-          "created_at": 1481392125,
-          "created_by": "us-maryxxxxx",
-          "index_priority_joined_at": 51484512896,
-          "index_priority_joined_at_desc": -51484512896,
-          "joined_at": 1484512896,
-          "joined_at_desc": -1484512896,
-          "muted": false,
-          "priority": 5,
-          "role": "member",
-          "starred": false
-        }
-      }
-    }
-  }
-  return data
-}
-
-function addMemberGroups(data) {
-  data["member-groups"] = {
-    "us-tarzanxxx": {
-      "gr-treehouse": {
+      "ch-generalxx": {
         "created_at": 1481392125,
         "created_by": "us-tarzanxxx",
-        "disabled": false,
-        "email": "tarzan@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
-        "notifications": "all",
-        "priority": 6,
-        "role": "owner"
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "owner",
+        "starred": false
+      },
+      "ch-chatterxx": {
+        "created_at": 1481392125,
+        "created_by": "us-tarzanxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "owner",
+        "starred": false
       }
     },
     "us-janexxxxx": {
-      "gr-treehouse": {
+      "ch-generalxx": {
         "created_at": 1481392125,
         "created_by": "us-janexxxxx",
-        "disabled": false,
-        "email": "jane@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
-        "notifications": "all",
-        "priority": 6,
-        "role": "member"
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "member",
+        "starred": false
+      },
+      "ch-chatterxx": {
+        "created_at": 1481392125,
+        "created_by": "us-janexxxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "member",
+        "starred": false
+      },
+      "ch-privatexx": {
+        "created_at": 1481392125,
+        "created_by": "us-janexxxxx",
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "owner",
+        "starred": false
       }
     },
     "us-maryxxxxx": {
-      "gr-treehouse": {
-        "created_at": 1484416000,
+      "ch-privatexx": {
+        "created_at": 1481392125,
         "created_by": "us-maryxxxxx",
-        "disabled": false,
-        "email": "mary@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
-        "notifications": "all",
-        "priority": 6,
-        "role": "guest"
-      },
-      "gr-janetimex": {
-        "created_at": 1484416000,
-        "created_by": "us-maryxxxxx",
-        "disabled": false,
-        "email": "jane@jungle.com",
-        "index_priority_joined_at": 61484416000,
-        "index_priority_joined_at_desc": -41484416000,
-        "joined_at": 1484416000,
-        "joined_at_desc": -1484416000,
-        "notifications": "all",
-        "priority": 6,
-        "role": "member"
+        "index_priority_joined_at": 51484512896,
+        "index_priority_joined_at_desc": -51484512896,
+        "joined_at": 1484512896,
+        "joined_at_desc": -1484512896,
+        "priority": 5,
+        "role": "member",
+        "starred": false
       }
     }
   }
@@ -785,10 +366,8 @@ function addTasks(data) {
 
 function addTyping(data) {
   data.typing = {
-    "gr-treehouse": {
-      "ch-generalxx": {
-        "us-tarzanxxx": "tarzan"
-      }
+    "ch-generalxx": {
+      "us-tarzanxxx": "tarzan"
     }
   }
   return data
@@ -797,25 +376,19 @@ function addTyping(data) {
 function addUnreads(data) {
   data.unreads = {
     "us-janexxxxx": {
-      "gr-treehouse": {
-        "ch-generalxx": {
-          "me-messagex1": true
-        }
+      "ch-generalxx": {
+        "me-messagex1": true
       }
     },
     "us-maryxxxxx": {
-      "gr-treehouse": {
-        "ch-privatexx": {
-          "me-messagex2": true
-        }
+      "ch-privatexx": {
+        "me-messagex2": true
       }
     },
     "us-tarzanxxx": {
-      "gr-treehouse": {
-        "ch-privatexx": {
-          "me-messagex2": true
-        }
-      }      
+      "ch-privatexx": {
+        "me-messagex2": true
+      }
     }
   }
   return data

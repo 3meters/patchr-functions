@@ -22,9 +22,9 @@
     },
     "channels": {
       "$channelId": {
-        ".validate": "newData.hasChildren(['created_at', 'created_by', 'general', 'name', 'owned_by'])",
-        "archived": {
-          ".validate": "newData.isBoolean()"
+        ".validate": "newData.hasChildren(['code', 'created_at', 'created_by', 'general', 'owned_by', 'title'])",
+        "code": {
+          ".validate": "newData.isString() && newData.val().length == 12"
         },
         "created_at": {
           ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
@@ -42,7 +42,7 @@
           ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
         },
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 50 && newData.val() == newData.val().toLowerCase()"
+          ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 200 && newData.val() == newData.val().toLowerCase()"
         },
         "owned_by": {
           ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
@@ -55,23 +55,23 @@
           "height": {
             ".validate": "newData.isNumber()"
           },
+          "location": {
+            "$key1": {
+              ".validate": "newData.isNumber()"
+            },
+            ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+          },
           "source": {
             ".validate": "newData.isString() && newData.val() == 'google-storage'"
           },
           "taken_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
           },
-          "width": {
-            ".validate": "newData.isNumber()"
-          },
           "uploading": {
             ".validate": "newData.isBoolean()"
           },
-          "location": {
-            "$key1": {
-              ".validate": "newData.isNumber()"
-            },
-            ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+          "width": {
+            ".validate": "newData.isNumber()"
           },
           "$other": {
             ".validate": "false"
@@ -80,17 +80,14 @@
         "purpose": {
           ".validate": "newData.isString() && newData.val().length <= 4000"
         },
-        "topic": {
+        "title": {
           ".validate": "newData.isString() && newData.val().length <= 200"
-        },
-        "type": {
-          ".validate": "newData.isString() && (newData.val() == 'channel' || newData.val() == 'messaging')"
         },
         "$other": {
           ".validate": "false"
         },
         ".write": "data.val() == null && auth != null || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
-        ".read": "auth != null"
+        ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
       },
       ".indexOn": [
         "name"
@@ -100,9 +97,9 @@
       "$channelId": {
         ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
         "$userId": {
-          ".validate": "newData.hasChildren(['created_at', 'created_by', 'muted', 'notifications', 'role'])",
-          "archived": {
-            ".validate": "newData.isBoolean()"
+          ".validate": "newData.hasChildren(['code', 'created_at', 'created_by', 'role'])",
+          "code": {
+            ".validate": "newData.isString() && newData.val().length == 12"
           },
           "created_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
@@ -128,11 +125,8 @@
           "joined_at_desc": {
             ".validate": "newData.isNumber()"
           },
-          "muted": {
-            ".validate": "newData.isBoolean()"
-          },
           "notifications": {
-            ".validate": "newData.isString() && (newData.val() == 'all' || newData.val() == 'direct_only' || newData.val() == 'none')"
+            ".validate": "newData.isString() && (newData.val() == 'all' || newData.val() == 'posts_only' || newData.val() == 'none')"
           },
           "priority": {
             ".validate": "newData.isNumber()"
@@ -146,7 +140,7 @@
           "$other": {
             ".validate": "false"
           },
-          ".write": "data.val() == null && auth != null && root.child('channels').child($channelId).val() != null || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid && newData.child('role').val() == data.child('role').val() || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
+          ".write": "data.val() == null && auth != null && root.child('channels').child($channelId).val() != null && root.child('channels').child($channelId).child('code').val() == newData.child('code').val() || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid && newData.child('role').val() == data.child('role').val() || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
         }
       }
     },
@@ -166,23 +160,23 @@
                 "height": {
                   ".validate": "newData.isNumber()"
                 },
+                "location": {
+                  "$key1": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+                },
                 "source": {
                   ".validate": "newData.isString() && newData.val() == 'google-storage'"
                 },
                 "taken_at": {
                   ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
                 },
-                "width": {
-                  ".validate": "newData.isNumber()"
-                },
                 "uploading": {
                   ".validate": "newData.isBoolean()"
                 },
-                "location": {
-                  "$key1": {
-                    ".validate": "newData.isNumber()"
-                  },
-                  ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+                "width": {
+                  ".validate": "newData.isNumber()"
                 },
                 "$other": {
                   ".validate": "false"
@@ -196,100 +190,6 @@
           },
           "channel_id": {
             ".validate": "newData.isString() && newData.val().length == 12"
-          },
-          "comments": {
-            "$key3": {
-              ".validate": "($key3.length == 28 || $key3.length == 12) && ***TYPE RECURSION***"
-            },
-            ".validate": "newData.hasChildren()",
-            "$commentId": {
-              ".validate": "newData.hasChildren(['channel_id', 'created_at', 'created_at_desc', 'created_by', 'modified_at', 'modified_by'])",
-              "attachments": {
-                "$key2": {
-                  ".validate": "$key2.length == 12 && newData.hasChildren() && newData.hasChildren(['photo'])",
-                  "photo": {
-                    ".validate": "newData.hasChildren() && newData.hasChildren(['filename', 'source'])",
-                    "filename": {
-                      ".validate": "newData.isString() && newData.val().endsWith('.jpg') && newData.val().length <= 100"
-                    },
-                    "height": {
-                      ".validate": "newData.isNumber()"
-                    },
-                    "source": {
-                      ".validate": "newData.isString() && newData.val() == 'google-storage'"
-                    },
-                    "taken_at": {
-                      ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-                    },
-                    "width": {
-                      ".validate": "newData.isNumber()"
-                    },
-                    "uploading": {
-                      ".validate": "newData.isBoolean()"
-                    },
-                    "location": {
-                      "$key1": {
-                        ".validate": "newData.isNumber()"
-                      },
-                      ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
-                    },
-                    "$other": {
-                      ".validate": "false"
-                    }
-                  },
-                  "$other": {
-                    ".validate": "false"
-                  }
-                },
-                ".validate": "newData.hasChildren()"
-              },
-              "channel_id": {
-                ".validate": "newData.isString() && newData.val().length == 12"
-              },
-              "comments": {
-                "$key3": {
-                  ".validate": "($key3.length == 28 || $key3.length == 12) && ***TYPE RECURSION***"
-                },
-                ".validate": "newData.hasChildren()"
-              },
-              "created_at": {
-                ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-              },
-              "created_at_desc": {
-                ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
-              },
-              "created_by": {
-                ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-              },
-              "message_id": {
-                ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-              },
-              "modified_at": {
-                ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-              },
-              "modified_by": {
-                ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-              },
-              "reactions": {
-                "$key4": {
-                  ".validate": "($key4 == ':thumbsup:' || $key4 == ':thumbsdown:' || $key4 == ':grinning:' || $key4 == ':tada:' || $key4 == ':clap:' || $key4 == ':100:' || $key4 == ':poop:' || $key4 == ':confused:' || $key4 == ':heart:' || $key4 == ':smiley_cat:' || $key4 == ':smiling_imp:' || $key4 == ':muscle:' || $key4 == ':zzz:' || $key4 == ':cocktail:' || $key4 == ':trophy:' || $key4 == ':fireworks:' || $key4 == ':gift:' || $key4 == ':astonished:' || $key4 == ':drooling_face:' || $key4 == ':sleeping:' || $key4 == ':yum:' || $key4 == ':laughing:' || $key4 == ':heart_eyes:' || $key4 == ':bulb:') && newData.hasChildren()",
-                  "$key5": {
-                    ".validate": "($key5.length == 28 || $key5.length == 12) && newData.isBoolean()"
-                  }
-                },
-                ".validate": "newData.hasChildren()"
-              },
-              "source": {
-                ".validate": "newData.isString() && (newData.val() == 'system' || newData.val() == 'user')"
-              },
-              "text": {
-                ".validate": "newData.isString() && newData.val().length <= 4000"
-              },
-              "$other": {
-                ".validate": "false"
-              },
-              ".write": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
-            }
           },
           "created_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
@@ -310,17 +210,14 @@
             ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
           },
           "reactions": {
-            "$key4": {
-              ".validate": "newData.hasChildren() && ($key4 == ':thumbsup:' || $key4 == ':thumbsdown:' || $key4 == ':grinning:' || $key4 == ':tada:' || $key4 == ':clap:' || $key4 == ':100:' || $key4 == ':poop:' || $key4 == ':confused:' || $key4 == ':heart:' || $key4 == ':smiley_cat:' || $key4 == ':smiling_imp:' || $key4 == ':muscle:' || $key4 == ':zzz:' || $key4 == ':cocktail:' || $key4 == ':trophy:' || $key4 == ':fireworks:' || $key4 == ':gift:' || $key4 == ':astonished:' || $key4 == ':drooling_face:' || $key4 == ':sleeping:' || $key4 == ':yum:' || $key4 == ':laughing:' || $key4 == ':heart_eyes:' || $key4 == ':bulb:') && newData.hasChildren() && ($key4 == ':thumbsup:' || $key4 == ':thumbsdown:' || $key4 == ':grinning:' || $key4 == ':tada:' || $key4 == ':clap:' || $key4 == ':100:' || $key4 == ':poop:' || $key4 == ':confused:' || $key4 == ':heart:' || $key4 == ':smiley_cat:' || $key4 == ':smiling_imp:' || $key4 == ':muscle:' || $key4 == ':zzz:' || $key4 == ':cocktail:' || $key4 == ':trophy:' || $key4 == ':fireworks:' || $key4 == ':gift:' || $key4 == ':astonished:' || $key4 == ':drooling_face:' || $key4 == ':sleeping:' || $key4 == ':yum:' || $key4 == ':laughing:' || $key4 == ':heart_eyes:' || $key4 == ':bulb:')",
-              "$key5": {
-                ".validate": "($key5.length == 28 || $key5.length == 12) && newData.isBoolean() && ($key5.length == 28 || $key5.length == 12) && newData.isBoolean()"
+            "$key3": {
+              ".validate": "newData.hasChildren() && ($key3 == ':thumbsup:' || $key3 == ':thumbsdown:' || $key3 == ':grinning:' || $key3 == ':tada:' || $key3 == ':clap:' || $key3 == ':100:' || $key3 == ':poop:' || $key3 == ':confused:' || $key3 == ':heart:' || $key3 == ':smiley_cat:' || $key3 == ':smiling_imp:' || $key3 == ':muscle:' || $key3 == ':zzz:' || $key3 == ':cocktail:' || $key3 == ':trophy:' || $key3 == ':fireworks:' || $key3 == ':gift:' || $key3 == ':astonished:' || $key3 == ':drooling_face:' || $key3 == ':sleeping:' || $key3 == ':yum:' || $key3 == ':laughing:' || $key3 == ':heart_eyes:' || $key3 == ':bulb:') && newData.hasChildren() && ($key3 == ':thumbsup:' || $key3 == ':thumbsdown:' || $key3 == ':grinning:' || $key3 == ':tada:' || $key3 == ':clap:' || $key3 == ':100:' || $key3 == ':poop:' || $key3 == ':confused:' || $key3 == ':heart:' || $key3 == ':smiley_cat:' || $key3 == ':smiling_imp:' || $key3 == ':muscle:' || $key3 == ':zzz:' || $key3 == ':cocktail:' || $key3 == ':trophy:' || $key3 == ':fireworks:' || $key3 == ':gift:' || $key3 == ':astonished:' || $key3 == ':drooling_face:' || $key3 == ':sleeping:' || $key3 == ':yum:' || $key3 == ':laughing:' || $key3 == ':heart_eyes:' || $key3 == ':bulb:')",
+              "$key4": {
+                ".validate": "($key4.length == 28 || $key4.length == 12) && newData.isBoolean() && ($key4.length == 28 || $key4.length == 12) && newData.isBoolean()"
               }
             },
             ".validate": "newData.hasChildren()",
             ".write": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
-          },
-          "source": {
-            ".validate": "newData.isString() && (newData.val() == 'system' || newData.val() == 'user')"
           },
           "text": {
             ".validate": "newData.isString() && newData.val().length <= 4000"
@@ -334,7 +231,7 @@
     },
     "installs": {
       "$userId": {
-        "$key6": {
+        "$key5": {
           ".validate": "newData.isBoolean()"
         },
         ".validate": "newData.hasChildren()",
@@ -344,19 +241,13 @@
     "invites": {
       "$inviteId": {
         ".validate": "newData.hasChildren(['created_at', 'created_by', 'email', 'invited_at', 'invited_at_desc', 'inviter', 'link', 'role'])",
-        "accepted_at": {
-          ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-        },
-        "accepted_by": {
-          ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-        },
         "channel": {
-          ".validate": "newData.hasChildren() && newData.hasChildren(['id', 'name'])",
+          ".validate": "newData.hasChildren() && newData.hasChildren(['id', 'title'])",
           "id": {
             ".validate": "newData.isString() && newData.val().length == 12"
           },
-          "name": {
-            ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 50 && newData.val() == newData.val().toLowerCase()"
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
           },
           "$other": {
             ".validate": "false"
@@ -468,6 +359,7 @@
     },
     "unreads": {
       "$userId": {
+        ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId)",
         ".read": "auth != null && auth.uid == $userId",
         "$channelId": {
           ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
@@ -529,23 +421,23 @@
             "height": {
               ".validate": "newData.isNumber() && newData.isNumber()"
             },
+            "location": {
+              "$key1": {
+                ".validate": "newData.isNumber() && newData.isNumber()"
+              },
+              ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null && newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+            },
             "source": {
               ".validate": "newData.isString() && newData.val() == 'google-storage' && newData.isString() && newData.val() == 'google-storage'"
             },
             "taken_at": {
               ".validate": "newData.isNumber() && newData.val() <= now + 3600000 && newData.isNumber() && newData.val() <= now + 3600000"
             },
-            "width": {
-              ".validate": "newData.isNumber() && newData.isNumber()"
-            },
             "uploading": {
               ".validate": "newData.isBoolean() && newData.isBoolean()"
             },
-            "location": {
-              "$key1": {
-                ".validate": "newData.isNumber() && newData.isNumber()"
-              },
-              ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null && newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+            "width": {
+              ".validate": "newData.isNumber() && newData.isNumber()"
             },
             "$other": {
               ".validate": "false"

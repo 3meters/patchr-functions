@@ -1,13 +1,14 @@
 {
   "name": "patchr-functions",
-  "version": "1.0.0",
-  "description": "Cloud Functions for Patchr 1.0.0",
+  "version": "2.0.0",
+  "description": "Cloud Functions for Patchr 2.0.0",
   "dependencies": {
     "@google-cloud/storage": "~1.1.0",
     "firebase-admin": "^5.0.0",
     "firebase-functions": "^0.5.9",
     "lodash": "^4.6.1",
-    "sendgrid": "*"
+    "sendgrid": "*",
+    "slugify": "^1.1.0"
   },
   "main": "./built/index.js",
   "private": true

@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@google-cloud/storage": "~1.1.0",
-    "@types/async": "*",
-    "@types/node": "^8.0.8",
+    "@types/async": "^2.x",
+    "@types/node": "^8.x",
     "@types/request-promise": "^4.1.36",
     "async": "^2.5.0",
     "aws-sdk": "^2.81.0",

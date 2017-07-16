@@ -1,6 +1,7 @@
 import * as async from 'async'
 import * as admin from 'firebase-admin'
 import * as fs from 'fs'
+import * as _ from 'lodash'
 import * as request from 'request'
 
 admin.initializeApp({
@@ -13,141 +14,123 @@ admin.initializeApp({
 
 type Database = admin.database.Database
 type DataSnapshot = admin.database.DataSnapshot
-
-// tslint:disable-next-line:no-var-requires
-const gcs = require('@google-cloud/storage')({
-  projectId: 'patchr-ios-dev',
-  keyFilename: 'service-credentials-dev.json',
-})
+const root = {}
 
 run()
 
 /* jshint -W098 */
 async function run() {
+  /*
+    channel-names: exclude
+    clients: no change
+    counters: exclude
+    group-channel-members: ** transform **
+    group-channels: ** transform **
+    group-members: exclude
+    group-messages: ** transform **
+    groups: exclude
+    installs: no change
+    member-channels: created as part of group-channel-members
+    member-groups: exclude
+    typing: exclude
+    unreads: exclude
+    usernames: no change
+    users: no change
+  */
   console.log('Export transform running...')
-  await transformUnreads()
+  await transformChannels()
+  await transformMembership()
+  await transformMessages()
+  await copy()
+  const stream: fs.WriteStream = fs.createWriteStream('database.json')
+  stream.write(JSON.stringify(root, null, 2))
+  console.log('Database file saved')
 }
 
-async function transformUnreads() {
-  const unreads: DataSnapshot = await admin.database().ref('unreads').once('value')
-  unreads.forEach((user) => {
-    const userId = user.key
-    user.forEach((group) => {
-      group.forEach((channel) => {
-        const channelId = channel.key
-        if (userId && channelId) {
-          admin.database().ref(`unreads-v2/${userId}/${channelId}`).set(channel.val())
+async function copy() {
+  const clients = (await admin.database().ref('clients').once('value')).val()
+  const installs = (await admin.database().ref('installs').once('value')).val()
+  const usernames = (await admin.database().ref('usernames').once('value')).val()
+  const users = (await admin.database().ref('users').once('value')).val()
+  root['clients'] = clients
+  root['installs'] = installs
+  root['usernames'] = usernames
+  root['users'] = users
+}
+
+async function transformChannels() {
+  root['channels'] = {}
+  const groups = (await admin.database().ref('group-channels').once('value')).val()
+  _.forOwn(groups, (group, groupId) => {
+    _.forOwn(group, (channel, channelId) => {
+      delete channel.group_id
+      delete channel.archived
+      delete channel.type
+      delete channel.visibility
+      delete channel.topic
+      if (channel.general || channel.name === 'chatter') {
+        delete channel.purpose
+      }
+      channel.title = titleize(channel.name)
+      root['channels'][channelId] = channel
+    })
+  })
+}
+
+async function transformMembership() {
+  root['channel-members'] = {}
+  root['member-channels'] = {}  
+  const groups = (await admin.database().ref('group-channel-members').once('value')).val()
+  _.forOwn(groups, (group, groupId) => {
+    _.forOwn(group, (channel, channelId) => {
+      _.forOwn(channel, (membership, userId) => {
+        membership.notifications = 'all'
+        if (membership.muted) {
+          membership.notifications = 'none'
         }
-        return false
+        if (membership.role === 'member') {
+          membership.role = 'editor'
+        }
+        else if (membership.role === 'visitor') {
+          membership.role = 'reader'          
+        }
+        if (!root['channel-members'][channelId]) {
+          root['channel-members'][channelId] = {}
+        }
+        if (!root['member-channels'][userId]) {
+          root['member-channels'][userId] = {}
+        }
+        delete membership.archived
+        delete membership.muted
+        root['channel-members'][channelId][userId] = membership
+        root['member-channels'][userId][channelId] = membership
       })
-      return false
     })
-    return false
   })
 }
 
-async function fixupMessagePhotos() {
-  const groups: DataSnapshot = await admin.database()
-    .ref('group-messages')
-    .once('value')
-  let count = 0
-  groups.forEach((group) => {
-    group.forEach((channel) => {
-      channel.forEach((message) => {
-        if (message.val().attachments) {
-          for (const prop in message.val().attachments) {
-            if (message.val().attachments.hasOwnProperty(prop)) {
-              const photo = message.val().attachments[prop].photo
-              if (photo.source === 'aircandi.images') {
-                count++
-                const path = `attachments/${prop}/photo/source`
-                console.log(`Updating photo source: ${photo.filename}`)
-                console.log(`Path: ${message.ref}/${path}`)
-                // message.ref.child(path).set('google-storage')
-              }
-            }
-          }
+async function transformMessages() {
+  root['channel-messages'] = {}
+  const groups = (await admin.database().ref('group-messages').once('value')).val()
+  _.forOwn(groups, (group, groupId) => {
+    _.forOwn(group, (channel, channelId) => {
+      _.forOwn(channel, (message, messageId) => {
+        if (!root['channel-messages'][channelId]) {
+          root['channel-messages'][channelId] = {}
         }
-        return false
+        delete message.group_id
+        if (message.source !== 'system') {
+          delete message.source
+          root['channel-messages'][channelId][messageId] = message
+        }
       })
-      return false
     })
-    return false
   })
-  console.log(`Total images: ${count}`)
 }
 
-async function fixupUserPhotos() {
-  const users: DataSnapshot = await admin.database()
-    .ref('users')
-    .once('value')
-  let count = 0
-  users.forEach((user) => {
-    if (user.val().profile && user.val().profile.photo) {
-      const photo = user.val().profile.photo
-      if (photo.source === 'aircandi.images') {
-        count++
-        const path = `profile/photo/source`
-        console.log(`Updating photo source: ${photo.filename}`)
-        console.log(`Path: ${user.ref}/${path}`)
-        user.ref.child(path).set('google-storage')
-      }
-    }
-    return false
-  })
-  console.log(`Total images: ${count}`)
-}
-
-async function fixupGroupPhotos() {
-  const groups: DataSnapshot = await admin.database()
-    .ref('groups')
-    .once('value')
-  let count = 0
-  groups.forEach((group) => {
-    if (group.val().photo) {
-      const photo = group.val().photo
-      if (photo.source === 'aircandi.images') {
-        count++
-        const path = `photo/source`
-        console.log(`Updating photo source: ${photo.filename}`)
-        console.log(`Path: ${group.ref}/${path}`)
-        group.ref.child(path).set('google-storage')
-      }
-    }
-    return false
-  })
-  console.log(`Total images: ${count}`)
-}
-
-async function fixupChannelPhotos() {
-  const bucket = gcs.bucket('patchr-images')
-  const groups: DataSnapshot = await admin.database()
-    .ref('group-channels')
-    .once('value')
-  let count = 0
-  groups.forEach((group) => {
-    group.forEach((channel) => {
-      if (channel.val().photo) {
-        const photo = channel.val().photo
-        if (photo.source === 'aircandi.images') {
-          count++
-          const path = `photo/source`
-          console.log(`Updating photo source: ${photo.filename}`)
-          console.log(`Path: ${channel.ref}/${path}`)
-          // channel.ref.child(path).set('google-storage')
-        } else {
-          bucket.file(photo.filename).exists().then((data) => {
-            const exists = data[0]
-            if (!exists) {
-              console.log(`Clear broken photo: ${photo.filename}`)
-              // channel.ref.child('photo').remove()
-            }
-          })
-        }
-      }
-      return false
-    })
-    return false
-  })
-  console.log(`Total images: ${count}`)
+function titleize(slug) {
+  const words = slug.split('-')
+  return words.map((word) => {
+    return word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()
+  }).join(' ')
 }

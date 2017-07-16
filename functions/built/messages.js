@@ -25,7 +25,7 @@ function onWriteMessage(event) {
             yield deleted(event.data.previous);
         }
         else if (shared.getAction(event) === Action.change) {
-            yield changed(event.data.previous, event.data.current);
+            yield updated(event.data.previous, event.data.current);
         }
     });
 }
@@ -34,21 +34,19 @@ function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const message = current.val();
         const channelId = message.channel_id;
-        const groupId = message.group_id;
         const messageId = current.key;
         const createdBy = message.created_by;
         console.log(`Message created: ${messageId}`);
         /* Gather list of channel members */
-        const memberIds = yield shared.getMembersToNotify(groupId, channelId, [message.created_by]);
+        const memberIds = yield shared.getMembersToNotify(channelId, [message.created_by]);
         if (memberIds.length === 0) {
             return;
         }
         console.log('Channel members to notify: ' + memberIds.length);
         const username = (yield shared.getUser(createdBy)).val().username;
-        const channelName = (yield shared.getChannel(groupId, channelId)).val().name;
+        const channelName = (yield shared.getChannel(channelId)).val().name;
         const data = {
             user_id: createdBy,
-            group_id: groupId,
             channel_id: channelId,
             message_id: messageId,
         };
@@ -80,8 +78,8 @@ function created(current) {
         function notify(memberId, installs) {
             return __awaiter(this, void 0, void 0, function* () {
                 const unreads = ((yield shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1;
-                yield shared.database.ref(`unreads/${memberId}/${groupId}/${channelId}/${messageId}`).set(true);
-                const membership = yield shared.database.ref(`member-channels/${memberId}/${groupId}/${channelId}`).once('value');
+                yield shared.database.ref(`unreads/${memberId}/${channelId}/${messageId}`).set(true);
+                const membership = yield shared.database.ref(`member-channels/${memberId}/${channelId}`).once('value');
                 /* Bump sort priority */
                 if (membership.val().priority !== 0) {
                     const timestamp = membership.val().joined_at; // not a real timestamp, shortened to 10 digits
@@ -103,12 +101,12 @@ function created(current) {
         }
     });
 }
-function changed(previous, current) {
+function updated(previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const messageId = current.key;
         const previousPhoto = shared.getPhotoFromMessage(previous.val());
         const currentPhoto = shared.getPhotoFromMessage(current.val());
-        console.log(`Message changed: ${messageId}`);
+        console.log(`Message updated: ${messageId}`);
         if (previousPhoto) {
             if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
                 if (previousPhoto.source === 'google-storage') {
@@ -122,16 +120,15 @@ function changed(previous, current) {
 function deleted(previous) {
     return __awaiter(this, void 0, void 0, function* () {
         const channelId = previous.val().channel_id;
-        const groupId = previous.val().group_id;
         const messageId = previous.key;
         const photo = shared.getPhotoFromMessage(previous.val());
         console.log(`Message deleted: ${messageId}`);
         /* Clear unread flag for each member */
-        const memberIds = yield shared.getMemberIds(groupId, channelId);
+        const memberIds = yield shared.getMemberIds(channelId);
         if (memberIds.length > 0) {
             const updates = {};
             memberIds.forEach((memberId) => {
-                updates[`unreads/${memberId}/${groupId}/${channelId}/${messageId}`] = null;
+                updates[`unreads/${memberId}/${channelId}/${messageId}`] = null;
             });
             yield shared.database.ref().update(updates);
         }

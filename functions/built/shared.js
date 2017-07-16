@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
+const slugifyjs = require("slugify");
 admin.initializeApp(functions.config().firebase);
 exports.messaging = admin.messaging();
 exports.database = admin.database();
@@ -21,41 +22,30 @@ exports.auth = admin.auth();
 const gcs = require('@google-cloud/storage')();
 const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1];
-function getMemberIds(groupId, channelId) {
+function slugify(title) {
+    return slugifyjs(title);
+}
+exports.slugify = slugify;
+function getMemberIds(channelId) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!channelId) {
-            const members = yield exports.database
-                .ref(`group-members/${groupId}`)
-                .once('value');
-            const values = [];
-            members.forEach((member) => {
-                if (member.key) {
-                    values.push(member.key);
-                }
-                return false;
-            });
-            return values;
-        }
-        else {
-            const members = yield exports.database
-                .ref(`group-channel-members/${groupId}/${channelId}`)
-                .once('value');
-            const values = [];
-            members.forEach((member) => {
-                if (member.key) {
-                    values.push(member.key);
-                }
-                return false;
-            });
-            return values;
-        }
+        const members = yield exports.database
+            .ref(`channel-members/${channelId}`)
+            .once('value');
+        const values = [];
+        members.forEach((member) => {
+            if (member.key) {
+                values.push(member.key);
+            }
+            return false;
+        });
+        return values;
     });
 }
 exports.getMemberIds = getMemberIds;
-function getMemberChannelIds(userId, groupId) {
+function getMemberChannelIds(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const memberships = yield exports.database
-            .ref(`member-channels/${userId}/${groupId}`)
+            .ref(`member-channels/${userId}`)
             .once('value');
         const values = [];
         memberships.forEach((membership) => {
@@ -68,10 +58,10 @@ function getMemberChannelIds(userId, groupId) {
     });
 }
 exports.getMemberChannelIds = getMemberChannelIds;
-function getMembersToNotify(groupId, channelId, exclude) {
+function getMembersToNotify(channelId, exclude) {
     return __awaiter(this, void 0, void 0, function* () {
         const members = yield exports.database
-            .ref(`group-channel-members/${groupId}/${channelId}`)
+            .ref(`channel-members/${channelId}`)
             .once('value');
         const values = [];
         members.forEach((member) => {
@@ -93,24 +83,15 @@ function getUser(userId) {
     });
 }
 exports.getUser = getUser;
-function getChannel(groupId, channelId) {
+function getChannel(channelId) {
     return __awaiter(this, void 0, void 0, function* () {
         const value = yield exports.database
-            .ref(`group-channels/${groupId}/${channelId}`)
+            .ref(`channels/${channelId}`)
             .once('value');
         return value;
     });
 }
 exports.getChannel = getChannel;
-function getGroup(groupId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const value = yield exports.database
-            .ref(`groups/${groupId}`)
-            .once('value');
-        return value;
-    });
-}
-exports.getGroup = getGroup;
 function getPhotoFromMessage(message) {
     if (message.attachments) {
         for (const prop in message.attachments) {
@@ -154,6 +135,7 @@ function channelMemberMap(userId, timestamp, priorityIndex, role) {
         index_priority_joined_at: index,
         index_priority_joined_at_desc: indexReversed,
         muted: false,
+        notifications: 'all',
         priority: priorityIndex,
         role: role,
         starred: false,
@@ -161,28 +143,6 @@ function channelMemberMap(userId, timestamp, priorityIndex, role) {
     return membership;
 }
 exports.channelMemberMap = channelMemberMap;
-function groupMemberMap(userId, timestamp, priorityIndex, role, email) {
-    const joinedAt = timestamp / 1000; // shorten to 10 digits
-    const index = parseInt('' + priorities[priorityIndex] + timestamp);
-    const indexReversed = parseInt('' + priorities_reversed[priorityIndex] + timestamp) * -1;
-    const membership = {
-        created_at: timestamp,
-        created_by: userId,
-        disabled: false,
-        joined_at: joinedAt,
-        joined_at_desc: joinedAt * -1,
-        index_priority_joined_at: index,
-        index_priority_joined_at_desc: indexReversed,
-        notifications: 'all',
-        priority: priorityIndex,
-        role: role,
-    };
-    if (email) {
-        membership.email = email;
-    }
-    return membership;
-}
-exports.groupMemberMap = groupMemberMap;
 var Action;
 (function (Action) {
     Action[Action["create"] = 0] = "create";

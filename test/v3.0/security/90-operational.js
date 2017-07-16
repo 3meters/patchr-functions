@@ -72,7 +72,7 @@ describe('Operational', function() {
 
   describe('Typing indicator security', function() {
     it('only typer, channel member and worker can write', function() {
-      const path = 'typing/gr-treehouse/ch-generalxx/us-janexxxxx'
+      const path = 'typing/ch-generalxx/us-janexxxxx'
       expect(users.unauth).cannot.write("jane").to.path(path)
       expect(users.cheeta).cannot.write("jane").to.path(path)
       expect(users.mary).cannot.write("jane").to.path(path)
@@ -81,8 +81,9 @@ describe('Operational', function() {
       expect(users.jane).can.write("jane").to.path(path)
     })
     it('only channel member or worker can read typers for the channel', function() {
-      const path = 'typing/gr-treehouse/ch-generalxx'
+      const path = 'typing/ch-generalxx'
       expect(users.unauth).cannot.read.path(path)
+      expect(users.cheeta).cannot.read.path(path)
       expect(users.mary).can.read.path(path)
       expect(users.worker).can.read.path(path)
       expect(users.jane).can.read.path(path)
@@ -92,7 +93,7 @@ describe('Operational', function() {
 
   describe('Unreads security', function() {
     it('only worker can create unreads', function() {
-      const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx/me-messagex1'
+      const path = 'unreads/us-janexxxxx/ch-generalxx/me-messagex1'
       expect(users.unauth).cannot.write(true).to.path(path)
       expect(users.mary).cannot.write(true).to.path(path)
       expect(users.tarzan).cannot.write(true).to.path(path)
@@ -108,7 +109,7 @@ describe('Operational', function() {
       expect(users.jane).can.read.path(path)
     })
     it('only current user or worker can remove message unreads', function() {
-      const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx/me-messagex1'
+      const path = 'unreads/us-janexxxxx/ch-generalxx/me-messagex1'
       expect(users.unauth).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
       expect(users.tarzan).can.write(null).to.path(path) // group and channel owner
@@ -116,18 +117,18 @@ describe('Operational', function() {
       expect(users.jane).can.write(null).to.path(path) // inviter, group owner
     })
     it('only group|channel owner, inviter, or worker can remove channel unreads', function() {
-      const path = 'unreads/us-janexxxxx/gr-treehouse/ch-generalxx'
+      const path = 'unreads/us-janexxxxx/ch-generalxx'
       expect(users.unauth).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
       expect(users.tarzan).can.write(null).to.path(path) // group and channel owner
       expect(users.worker).can.write(null).to.path(path)
       expect(users.jane).can.write(null).to.path(path) // inviter, group owner
     })
-    it('only group owner, inviter or worker can remove group unreads', function() {
-      const path = 'unreads/us-janexxxxx/gr-treehouse'
+    it('only user or worker can remove user unreads', function() {
+      const path = 'unreads/us-janexxxxx'
       expect(users.unauth).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.tarzan).can.write(null).to.path(path) // group owner
+      expect(users.tarzan).cannot.write(null).to.path(path) // group owner
       expect(users.worker).can.write(null).to.path(path)
       expect(users.jane).can.write(null).to.path(path) // inviter, group owner
     })

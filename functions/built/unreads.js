@@ -49,12 +49,9 @@ function onWriteUnreadsCounter(event) {
         const unreadsRef = shared.database.ref(`/unreads/${userId}`);
         try {
             let count = 0;
-            const groups = yield unreadsRef.once('value');
-            groups.forEach((group) => {
-                group.forEach((channel) => {
-                    count += channel.numChildren();
-                    return false;
-                });
+            const channels = yield unreadsRef.once('value');
+            channels.forEach((channel) => {
+                count += channel.numChildren();
                 return false;
             });
             yield countRef.set(count);

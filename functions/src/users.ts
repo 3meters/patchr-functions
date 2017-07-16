@@ -12,7 +12,7 @@ export async function onWriteProfile(event: shared.DatabaseEvent) {
   if (shared.getAction(event) === Action.delete) {
     await deletedProfile(event.params.userId, event.data.previous)
   } else if (shared.getAction(event) === Action.change) {
-    await changedProfile(event.params.userId, event.data.previous, event.data.current)
+    await updatedProfile(event.params.userId, event.data.previous, event.data.current)
   }
 }
 
@@ -23,7 +23,7 @@ export async function onWriteUsername(event: shared.DatabaseEvent) {
   } else if (shared.getAction(event) === Action.delete) {
     await deletedUsername(event.params.userId, event.data.previous)
   } else if (shared.getAction(event) === Action.change) {
-    await changedUsername(event.params.userId, event.data.previous, event.data.current)
+    await updatedUsername(event.params.userId, event.data.previous, event.data.current)
   }
 }
 
@@ -41,26 +41,24 @@ export async function createUser(task: any) {
   /* Add default general channel */
   const generalId = `ch-${utils.generateRandomId()}`
   const general = {
-    archived: false,
     created_at: timestamp,
     created_by: userId,
     general: true,
     name: 'general',
     owned_by: userId,
-    purpose: 'This channel is for messaging and announcements to the whole group. All group members are in this channel.',
+    title: 'General',
   }
   updates[`channels/${generalId}`] = general
 
   /* Add default chatter channel */
   const chatterId = `ch-${utils.generateRandomId()}`
   const chatter = {
-    archived: false,
     created_at: timestamp,
     created_by: userId,
-    general: true,
+    general: false,
     name: 'chatter',
     owned_by: userId,
-    purpose: 'The perfect place for crazy talk that you\'d prefer to keep off the other channels.',
+    title: 'Chatter',
   }
   updates[`channels/${chatterId}`] = chatter
 
@@ -82,8 +80,8 @@ export async function createUser(task: any) {
 
 /* Profile */
 
-async function changedProfile(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
-  console.log(`Profile changed: ${userId}`)
+async function updatedProfile(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
+  console.log(`Profile updated: ${userId}`)
   /* Delete previous image file if needed */
   if (current.child('profile/photo/filename').changed()) {
     const previousPhoto = previous.val().photo
@@ -113,11 +111,11 @@ async function createdUsername(userId: string, current: DeltaSnapshot) {
   await shared.database.ref().update(updates)
 }
 
-async function changedUsername(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updatedUsername(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
   /* Release old username and claim new one */
   const previousUsername: string = previous.val()
   const currentUsername: string = current.val()
-  console.log(`User ${userId} changed username: ${previousUsername} to: ${currentUsername}`)
+  console.log(`User ${userId} updated username: ${previousUsername} to: ${currentUsername}`)
   const update = {}
   update[`usernames/${previousUsername}`] = null
   update[`usernames/${currentUsername}`] = userId

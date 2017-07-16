@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 /*
- * Group member processing
+ * Channel member processing
  */
 const shared = require("./shared");
 const Action = shared.Action;
@@ -25,7 +25,7 @@ function onWriteMember(event) {
             yield deleted(event.params, event.data.previous);
         }
         else if (shared.getAction(event) === Action.change) {
-            yield changed(event.params, event.data.previous, event.data.current);
+            yield updated(event.params, event.data.previous, event.data.current);
         }
     });
 }
@@ -33,9 +33,9 @@ exports.onWriteMember = onWriteMember;
 function created(params, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const membership = current.val();
-        console.log(`Member: ${params.userId} added to channel: ${params.channelId} in group: ${params.groupId}`);
+        console.log(`Member: ${params.userId} added to channel: ${params.channelId}`);
         try {
-            yield shared.database.ref(`member-channels/${params.userId}/${params.groupId}/${params.channelId}`).set(membership);
+            yield shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership);
         }
         catch (err) {
             console.error('Error adding channel member: ', err);
@@ -43,12 +43,12 @@ function created(params, current) {
         }
     });
 }
-function changed(params, previous, current) {
+function updated(params, previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const membership = current.val();
         console.log(`Membership of: ${params.userId} updated for channel: ${params.channelId}`);
         try {
-            yield shared.database.ref(`member-channels/${params.userId}/${params.groupId}/${params.channelId}`).set(membership);
+            yield shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership);
         }
         catch (err) {
             console.error('Error updating channel member: ', err);
@@ -58,10 +58,10 @@ function changed(params, previous, current) {
 }
 function deleted(params, previous) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Member: ${params.userId} removed from channel: ${params.channelId} in group: ${params.groupId}`);
+        console.log(`Member: ${params.userId} removed from channel: ${params.channelId}`);
         const updates = {};
-        updates[`member-channels/${params.userId}/${params.groupId}/${params.channelId}`] = null; // No trigger
-        updates[`unreads/${params.userId}/${params.groupId}/${params.channelId}`] = null; // Delete trigger that updates counter
+        updates[`member-channels/${params.userId}/${params.channelId}`] = null; // No trigger
+        updates[`unreads/${params.userId}/${params.channelId}`] = null; // Delete trigger that updates counter
         try {
             yield shared.database.ref().update(updates);
         }

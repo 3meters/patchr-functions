@@ -8,11 +8,11 @@ const data = testUtil.generateData()
 /* jshint -W117 */
 
 chai.use(targaryen)
-describe('Patchr v2.0 security rules', function() {
+describe('Patchr v3.0 security rules', function() {
 
   before(function() {
-    targaryen.setFirebaseData(data)
     targaryen.setFirebaseRules(rules)
+    targaryen.setFirebaseData(data)
   })
 
   describe('Root security', function() {

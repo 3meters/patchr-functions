@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * User processing
  */
 const shared = require("./shared");
+const utils = require("./utils");
 const Action = shared.Action;
 function onWriteProfile(event) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -22,7 +23,7 @@ function onWriteProfile(event) {
             yield deletedProfile(event.params.userId, event.data.previous);
         }
         else if (shared.getAction(event) === Action.change) {
-            yield changedProfile(event.params.userId, event.data.previous, event.data.current);
+            yield updatedProfile(event.params.userId, event.data.previous, event.data.current);
         }
     });
 }
@@ -39,7 +40,7 @@ function onWriteUsername(event) {
             yield deletedUsername(event.params.userId, event.data.previous);
         }
         else if (shared.getAction(event) === Action.change) {
-            yield changedUsername(event.params.userId, event.data.previous, event.data.current);
+            yield updatedUsername(event.params.userId, event.data.previous, event.data.current);
         }
     });
 }
@@ -53,9 +54,35 @@ function createUser(task) {
             modified_at: admin.database.ServerValue.TIMESTAMP,
             username: req.username,
         };
+        const userId = req.user_id;
+        const timestamp = Date.now();
+        const updates = {};
+        /* Add default general channel */
+        const generalId = `ch-${utils.generateRandomId()}`;
+        const general = {
+            created_at: timestamp,
+            created_by: userId,
+            general: true,
+            name: 'general',
+            owned_by: userId,
+            title: 'General',
+        };
+        updates[`channels/${generalId}`] = general;
+        /* Add default chatter channel */
+        const chatterId = `ch-${utils.generateRandomId()}`;
+        const chatter = {
+            created_at: timestamp,
+            created_by: userId,
+            general: false,
+            name: 'chatter',
+            owned_by: userId,
+            title: 'Chatter',
+        };
+        updates[`channels/${chatterId}`] = chatter;
         console.log(`Creating user: ${req.user_id}`);
         try {
             yield shared.database.ref(`users/${req.user_id}`).set(user); // Validation will catch duplicate username
+            yield shared.database.ref().update(updates);
             if (task.adminRef) {
                 yield task.adminRef.child('response').set({ result: 'ok' });
             }
@@ -70,9 +97,9 @@ function createUser(task) {
 }
 exports.createUser = createUser;
 /* Profile */
-function changedProfile(userId, previous, current) {
+function updatedProfile(userId, previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Profile changed: ${userId}`);
+        console.log(`Profile updated: ${userId}`);
         /* Delete previous image file if needed */
         if (current.child('profile/photo/filename').changed()) {
             const previousPhoto = previous.val().photo;
@@ -103,12 +130,12 @@ function createdUsername(userId, current) {
         yield shared.database.ref().update(updates);
     });
 }
-function changedUsername(userId, previous, current) {
+function updatedUsername(userId, previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
         /* Release old username and claim new one */
         const previousUsername = previous.val();
         const currentUsername = current.val();
-        console.log(`User ${userId} changed username: ${previousUsername} to: ${currentUsername}`);
+        console.log(`User ${userId} updated username: ${previousUsername} to: ${currentUsername}`);
         const update = {};
         update[`usernames/${previousUsername}`] = null;
         update[`usernames/${currentUsername}`] = userId;

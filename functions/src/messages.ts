@@ -16,7 +16,7 @@ export async function onWriteMessage(event: shared.DatabaseEvent) {
   } else if (shared.getAction(event) === Action.delete) {
     await deleted(event.data.previous)
   } else if (shared.getAction(event) === Action.change) {
-    await changed(event.data.previous, event.data.current)
+    await updated(event.data.previous, event.data.current)
   }
 }
 
@@ -91,11 +91,11 @@ async function created(current: shared.DeltaSnapshot) {
   }
 }
 
-async function changed(previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
   const messageId: string = current.key
   const previousPhoto: any = shared.getPhotoFromMessage(previous.val())
   const currentPhoto: any = shared.getPhotoFromMessage(current.val())
-  console.log(`Message changed: ${messageId}`)
+  console.log(`Message updated: ${messageId}`)
 
   if (previousPhoto) {
     if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {

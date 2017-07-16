@@ -3,6 +3,7 @@
  */
 import * as admin from 'firebase-admin'
 import * as functions from 'firebase-functions'
+import * as slugifyjs from 'slugify'
 
 admin.initializeApp(functions.config().firebase)
 
@@ -21,6 +22,10 @@ export const auth: admin.auth.Auth = admin.auth()
 const gcs = require('@google-cloud/storage')()
 const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+
+export function slugify(title: string) {
+  return slugifyjs(title)
+}
 
 export async function getMemberIds(channelId: string | null) {
   const members: DataSnapshot = await database

@@ -1,5 +1,5 @@
 /*
- * Group member processing
+ * Channel member processing
  */
 import * as shared from './shared'
 const Action = shared.Action
@@ -13,7 +13,7 @@ export async function onWriteMember(event: shared.DatabaseEvent) {
   } else if (shared.getAction(event) === Action.delete) {
     await deleted(event.params, event.data.previous)
   } else if (shared.getAction(event) === Action.change) {
-    await changed(event.params, event.data.previous, event.data.current)
+    await updated(event.params, event.data.previous, event.data.current)
   }
 }
 
@@ -28,7 +28,7 @@ async function created(params: any, current: shared.DeltaSnapshot) {
   }
 }
 
-async function changed(params: any, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updated(params: any, previous: DeltaSnapshot, current: DeltaSnapshot) {
   const membership = current.val()
   console.log(`Membership of: ${params.userId} updated for channel: ${params.channelId}`)
   try {

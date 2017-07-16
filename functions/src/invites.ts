@@ -41,7 +41,7 @@ async function sendInviteEmail(invite: any) {
   }
 
   personalization.addTo(new helper.Email(invite.email))
-  personalization.addSubstitution(new helper.Substitution('-channel.name-', invite.channel.name))
+  personalization.addSubstitution(new helper.Substitution('-channel.title-', invite.channel.title))
   personalization.addSubstitution(new helper.Substitution('-user.title-', invite.inviter.title))
   personalization.addSubstitution(new helper.Substitution('-user.email-', invite.inviter.email))
   personalization.addSubstitution(new helper.Substitution('-link-', invite.link))
