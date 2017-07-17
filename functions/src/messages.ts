@@ -7,9 +7,6 @@ const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
 type DeltaSnapshot = shared.DeltaSnapshot
 
-const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-
 export async function onWriteMessage(event: shared.DatabaseEvent) {
   if (shared.getAction(event) === Action.create) {
     await created(event.data.current)
@@ -28,11 +25,26 @@ async function created(current: shared.DeltaSnapshot) {
   const createdBy: string = message.created_by
   console.log(`Message created: ${messageId}`)
 
-  /* Gather list of channel members */
-  const memberIds: string[] = await shared.getMembersToNotify(channelId, [message.created_by])
-  if (memberIds.length === 0) { return }
+  /* Members that need activity tickle */
+  const memberIds: string[] = await shared.getMemberIds(channelId)
+  if (memberIds.length > 0) { 
+    const updates = {}
+    memberIds.forEach((memberId) => {
+      updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at
+      updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc
+      updates[`channel-members/${channelId}/${memberId}/activity_by`] = message.created_by
+      updates[`member-channels/${memberId}/${channelId}/activity_at`] = message.created_at
+      updates[`member-channels/${memberId}/${channelId}/activity_at_desc`] = message.created_at_desc
+      updates[`member-channels/${memberId}/${channelId}/activity_by`] = message.created_by
+    })
+    await shared.database.ref().update(updates)
+  }
 
-  console.log('Channel members to notify: ' + memberIds.length)
+  /* Gather list of channel members to notify */
+  const notifyIds: string[] = await shared.getMembersToNotify(channelId, [message.created_by])
+  if (notifyIds.length === 0) { return }
+
+  console.log('Channel members to notify: ' + notifyIds.length)
 
   const username: string = (await shared.getUser(createdBy)).val().username
   const channelName: string = (await shared.getChannel(channelId)).val().name
@@ -54,9 +66,18 @@ async function created(current: shared.DeltaSnapshot) {
   try {
     const installs: any[] = []
     const promises: any[] = []
-    for (const memberId of memberIds) {
-      promises.push(notify(memberId, installs))
+    const updates = {}
+    for (const notifyId of notifyIds) {
+      updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true
+      updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at
+      updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc
+      updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by
+      updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at
+      updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc
+      updates[`member-channels/${notifyId}/${channelId}/activity_by`] = message.created_by
+      promises.push(notify(notifyId, installs))
     }
+    await shared.database.ref().update(updates)
     await Promise.all(promises)
     if (installs.length > 0) {
       await notifications.sendMessages(installs, notificationText, data)
@@ -69,18 +90,6 @@ async function created(current: shared.DeltaSnapshot) {
 
   async function notify(memberId: string, installs: any[]) {
     const unreads: number = ((await shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1
-    await shared.database.ref(`unreads/${memberId}/${channelId}/${messageId}`).set(true)
-    const membership: shared.DataSnapshot = await shared.database.ref(`member-channels/${memberId}/${channelId}`).once('value')
-    /* Bump sort priority */
-    if (membership.val().priority !== 0) {
-      const timestamp = membership.val().joined_at // not a real timestamp, shortened to 10 digits
-      await membership.ref.update({
-        priority: 0,
-        index_priority_joined_at: parseInt('' + priorities[0] + timestamp),
-        index_priority_joined_at_desc: parseInt('' + priorities_reversed[0] + timestamp) * -1,
-      })
-    }
-    /* Find installs to notify */
     const snaps: shared.DataSnapshot = await shared.database.ref(`installs/${memberId}`).once('value')
     snaps.forEach((install) => {
       if (install.key) {

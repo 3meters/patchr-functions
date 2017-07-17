@@ -1,12 +1,12 @@
 /*
  * Utilities
  */
-export function generateRandomId(): string {
-    const charCount = 9 // No dupes in 100 runs of one million
+export function generateRandomId(digits: number): string {
+    // No dupes in 100 runs of one million if using 9
     const charSet = 'abcdefghijklmnopqrstuvwxyz0123456789'
     const charSetSize = charSet.length
     let id = ''
-    for (let i = 1; i <= charCount; i++) {
+    for (let i = 1; i <= digits; i++) {
         const randPos = Math.floor(Math.random() * charSetSize)
         id += charSet[randPos]
     }
@@ -37,8 +37,7 @@ export function checkDuplicates(count: number): any[] {
     const hash = {}
     const dupes: Dupe[] = []
     for (let idx = 0; idx < count; ++idx) {
-        const gen = generateRandomId() // generate our unique ID
-
+        const gen = generateRandomId(9) // generate our unique ID
         // if it already exists, then it has been duplicated
         if (typeof hash[gen] !== 'undefined') {
             dupes.push({

@@ -14,6 +14,7 @@ admin.initializeApp({
 
 type Database = admin.database.Database
 type DataSnapshot = admin.database.DataSnapshot
+const codes = {}
 const root = {}
 
 run()
@@ -42,7 +43,7 @@ async function run() {
   await transformMembership()
   await transformMessages()
   await copy()
-  const stream: fs.WriteStream = fs.createWriteStream('database.json')
+  const stream: fs.WriteStream = fs.createWriteStream('patchr_database.json')
   stream.write(JSON.stringify(root, null, 2))
   console.log('Database file saved')
 }
@@ -71,6 +72,8 @@ async function transformChannels() {
       if (channel.general || channel.name === 'chatter') {
         delete channel.purpose
       }
+      channel.code = generateRandomId(12)
+      codes[channelId] = channel.code
       channel.title = titleize(channel.name)
       root['channels'][channelId] = channel
     })
@@ -79,20 +82,20 @@ async function transformChannels() {
 
 async function transformMembership() {
   root['channel-members'] = {}
-  root['member-channels'] = {}  
+  root['member-channels'] = {}
   const groups = (await admin.database().ref('group-channel-members').once('value')).val()
   _.forOwn(groups, (group, groupId) => {
     _.forOwn(group, (channel, channelId) => {
       _.forOwn(channel, (membership, userId) => {
+        membership.code = codes[channelId]
         membership.notifications = 'all'
         if (membership.muted) {
           membership.notifications = 'none'
         }
         if (membership.role === 'member') {
           membership.role = 'editor'
-        }
-        else if (membership.role === 'visitor') {
-          membership.role = 'reader'          
+        } else if (membership.role === 'visitor') {
+          membership.role = 'reader'
         }
         if (!root['channel-members'][channelId]) {
           root['channel-members'][channelId] = {}
@@ -102,6 +105,16 @@ async function transformMembership() {
         }
         delete membership.archived
         delete membership.muted
+        membership.created_at = membership.created_at * 1000
+        membership.activity_at = membership.created_at
+        membership.activity_at_desc = membership.activity_at * -1
+        membership.activity_by = membership.created_by
+        delete membership.index_priority_joined_at
+        delete membership.index_priority_joined_at_desc
+        delete membership.joined_at
+        delete membership.joined_at_desc
+        delete membership.priority
+        membership.starred = membership.starred || false
         root['channel-members'][channelId][userId] = membership
         root['member-channels'][userId][channelId] = membership
       })
@@ -133,4 +146,16 @@ function titleize(slug) {
   return words.map((word) => {
     return word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()
   }).join(' ')
+}
+
+function generateRandomId(digits: number): string {
+  // No dupes in 100 runs of one million if using 9
+  const charSet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const charSetSize = charSet.length
+  let id = ''
+  for (let i = 1; i <= digits; i++) {
+    const randPos = Math.floor(Math.random() * charSetSize)
+    id += charSet[randPos]
+  }
+  return id
 }

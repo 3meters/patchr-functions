@@ -2,6 +2,7 @@
  * Message processing
  */
 import * as shared from './shared'
+import * as utils from './utils'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
 type DeltaSnapshot = shared.DeltaSnapshot
@@ -18,15 +19,17 @@ export async function onWriteChannel(event: shared.DatabaseEvent) {
 
 async function created(current: DeltaSnapshot) {
   const channelId: string = current.key
-  const userId: string = current.val().created_by
-  const timestamp = Date.now()
-  const channelMembership = shared.channelMemberMap(userId, timestamp, 4, 'owner')
-  const updates = {}
   console.log(`Channel created: ${channelId}`)
 
+  const userId: string = current.val().created_by
+  const timestamp = Date.now()
+  const code = utils.generateRandomId(12)
   const slug = shared.slugify(current.val().title)
+  const membership = shared.channelMemberMap(userId, timestamp, 'owner', code)
+  const updates = {}
   updates[`channels/${channelId}/name`] = slug
-  updates[`channel-members/${channelId}/${userId}/`] = channelMembership
+  updates[`channels/${channelId}/code`] = code
+  updates[`channel-members/${channelId}/${userId}/`] = membership
 
   /* Submit updates */
   await shared.database.ref().update(updates)

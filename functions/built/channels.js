@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Message processing
  */
 const shared = require("./shared");
+const utils = require("./utils");
 const Action = shared.Action;
 function onWriteChannel(event) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -30,14 +31,16 @@ exports.onWriteChannel = onWriteChannel;
 function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const channelId = current.key;
+        console.log(`Channel created: ${channelId}`);
         const userId = current.val().created_by;
         const timestamp = Date.now();
-        const channelMembership = shared.channelMemberMap(userId, timestamp, 4, 'owner');
-        const updates = {};
-        console.log(`Channel created: ${channelId}`);
+        const code = utils.generateRandomId(12);
         const slug = shared.slugify(current.val().title);
+        const membership = shared.channelMemberMap(userId, timestamp, 'owner', code);
+        const updates = {};
         updates[`channels/${channelId}/name`] = slug;
-        updates[`channel-members/${channelId}/${userId}/`] = channelMembership;
+        updates[`channels/${channelId}/code`] = code;
+        updates[`channel-members/${channelId}/${userId}/`] = membership;
         /* Submit updates */
         yield shared.database.ref().update(updates);
     });

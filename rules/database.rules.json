@@ -97,7 +97,16 @@
       "$channelId": {
         ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
         "$userId": {
-          ".validate": "newData.hasChildren(['code', 'created_at', 'created_by', 'role'])",
+          ".validate": "newData.hasChildren(['activity_at', 'activity_at_desc', 'activity_by', 'code', 'created_at', 'created_by', 'notifications', 'role', 'starred'])",
+          "activity_at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+          },
+          "activity_at_desc": {
+            ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
+          },
+          "activity_by": {
+            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+          },
           "code": {
             ".validate": "newData.isString() && newData.val().length == 12"
           },
@@ -107,29 +116,8 @@
           "created_by": {
             ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
           },
-          "index_priority_joined_at": {
-            ".validate": "newData.isNumber()"
-          },
-          "index_priority_joined_at_desc": {
-            ".validate": "newData.isNumber()"
-          },
-          "invite_id": {
-            ".validate": "newData.isString() && newData.val().length == 12"
-          },
-          "invited_by": {
-            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-          },
-          "joined_at": {
-            ".validate": "newData.isNumber()"
-          },
-          "joined_at_desc": {
-            ".validate": "newData.isNumber()"
-          },
           "notifications": {
             ".validate": "newData.isString() && (newData.val() == 'all' || newData.val() == 'posts_only' || newData.val() == 'none')"
-          },
-          "priority": {
-            ".validate": "newData.isNumber()"
           },
           "role": {
             ".validate": "newData.isString() && (newData.val() == 'owner' || newData.val() == 'editor' || newData.val() == 'reader')"
@@ -240,7 +228,7 @@
     },
     "invites": {
       "$inviteId": {
-        ".validate": "newData.hasChildren(['created_at', 'created_by', 'email', 'invited_at', 'invited_at_desc', 'inviter', 'link', 'role'])",
+        ".validate": "newData.hasChildren(['created_at', 'created_by', 'email', 'inviter', 'link', 'role'])",
         "channel": {
           ".validate": "newData.hasChildren() && newData.hasChildren(['id', 'title'])",
           "id": {
@@ -261,12 +249,6 @@
         },
         "email": {
           ".validate": "newData.isString() && newData.val().length <= 256"
-        },
-        "invited_at": {
-          ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-        },
-        "invited_at_desc": {
-          ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
         },
         "inviter": {
           ".validate": "newData.hasChildren(['email', 'id', 'title', 'username'])",

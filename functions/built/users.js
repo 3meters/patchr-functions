@@ -57,9 +57,11 @@ function createUser(task) {
         const userId = req.user_id;
         const timestamp = Date.now();
         const updates = {};
-        /* Add default general channel */
-        const generalId = `ch-${utils.generateRandomId()}`;
+        /* Add default general channel, channel trigger adds creator as member */
+        const generalId = `ch-${utils.generateRandomId(9)}`;
+        const generalCode = utils.generateRandomId(12);
         const general = {
+            code: generalCode,
             created_at: timestamp,
             created_by: userId,
             general: true,
@@ -68,9 +70,11 @@ function createUser(task) {
             title: 'General',
         };
         updates[`channels/${generalId}`] = general;
-        /* Add default chatter channel */
-        const chatterId = `ch-${utils.generateRandomId()}`;
+        /* Add default chatter channel, channel trigger adds creator as member */
+        const chatterId = `ch-${utils.generateRandomId(9)}`;
+        const chatterCode = utils.generateRandomId(12);
         const chatter = {
+            code: chatterCode,
             created_at: timestamp,
             created_by: userId,
             general: false,

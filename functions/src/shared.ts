@@ -20,8 +20,6 @@ export const auth: admin.auth.Auth = admin.auth()
 
 // tslint:disable-next-line:no-var-requires
 const gcs = require('@google-cloud/storage')()
-const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 export function slugify(title: string) {
   return slugifyjs(title)
@@ -57,7 +55,7 @@ export async function getMembersToNotify(channelId: string, exclude: string[]) {
     .once('value')
   const values: string[] = []
   members.forEach((member) => {
-    if (member.key && !member.val().muted && !(exclude.indexOf(member.key) > -1)) {
+    if (member.key && member.val().notifications !== 'none' && !(exclude.indexOf(member.key) > -1)) {
       values.push(member.key)
     }
     return false
@@ -105,21 +103,15 @@ export async function deleteImageFile(filename: string) {
   const data = await file.delete()
 }
 
-export function channelMemberMap(userId, timestamp, priorityIndex, role) {
-  const joinedAt = timestamp / 1000 // shorten to 10 digits
-  const index = parseInt('' + priorities[priorityIndex] + timestamp)
-  const indexReversed = parseInt('' + priorities_reversed[priorityIndex] + timestamp) * -1
+export function channelMemberMap(userId: string, timestamp: number, role: string, code: string) {
   const membership = {
-    archived: false,
+    activity_at: timestamp,
+    activity_at_desc: timestamp * -1,
+    activity_by: userId,
+    code: code,
     created_at: timestamp,
     created_by: userId,
-    joined_at: joinedAt, // Not a real unix epoch timestamp, only 10 digits instead of 13
-    joined_at_desc: joinedAt * -1,
-    index_priority_joined_at: index,
-    index_priority_joined_at_desc: indexReversed,
-    muted: false,
     notifications: 'all',
-    priority: priorityIndex,
     role: role,
     starred: false,
   }

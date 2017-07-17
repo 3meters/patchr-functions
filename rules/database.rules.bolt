@@ -274,27 +274,21 @@ type Channel {
     title: TitleString,
 }
 type ChannelMember {
+    activity_at: Timestamp,
+    activity_at_desc: TimestampInverted,
+    activity_by: AnyKey,
     code: CodeString,
     created_at: Timestamp,
     created_by: AnyKey,
-    index_priority_joined_at: Number|Null,
-    index_priority_joined_at_desc: Number|Null,
-    invite_id: PatchrKey|Null,
-    invited_by: AnyKey|Null,
-    joined_at: Number|Null,
-    joined_at_desc: Number|Null,
-    notifications: Notifications|Null,
-    priority: Number|Null,
+    notifications: Notifications,
     role: ChannelRole,          
-    starred: Boolean|Null,
+    starred: Boolean,
 }
 type Invite {
     channel: InviteChannel|Null,
     created_at: Timestamp,
     created_by: AnyKey,
     email: EmailString,
-    invited_at: Timestamp,
-    invited_at_desc: TimestampInverted,
     inviter: Inviter,
     link: UrlString,
     role: ChannelRole

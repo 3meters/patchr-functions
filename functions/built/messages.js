@@ -14,8 +14,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const notifications = require("./notifications");
 const shared = require("./shared");
 const Action = shared.Action;
-const priorities = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const priorities_reversed = [9, 8, 7, 6, 5, 4, 3, 2, 1];
 function onWriteMessage(event) {
     return __awaiter(this, void 0, void 0, function* () {
         if (shared.getAction(event) === Action.create) {
@@ -37,12 +35,26 @@ function created(current) {
         const messageId = current.key;
         const createdBy = message.created_by;
         console.log(`Message created: ${messageId}`);
-        /* Gather list of channel members */
-        const memberIds = yield shared.getMembersToNotify(channelId, [message.created_by]);
-        if (memberIds.length === 0) {
+        /* Members that need activity tickle */
+        const memberIds = yield shared.getMemberIds(channelId);
+        if (memberIds.length > 0) {
+            const updates = {};
+            memberIds.forEach((memberId) => {
+                updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at;
+                updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${memberId}/activity_by`] = message.created_by;
+                updates[`member-channels/${memberId}/${channelId}/activity_at`] = message.created_at;
+                updates[`member-channels/${memberId}/${channelId}/activity_at_desc`] = message.created_at_desc;
+                updates[`member-channels/${memberId}/${channelId}/activity_by`] = message.created_by;
+            });
+            yield shared.database.ref().update(updates);
+        }
+        /* Gather list of channel members to notify */
+        const notifyIds = yield shared.getMembersToNotify(channelId, [message.created_by]);
+        if (notifyIds.length === 0) {
             return;
         }
-        console.log('Channel members to notify: ' + memberIds.length);
+        console.log('Channel members to notify: ' + notifyIds.length);
         const username = (yield shared.getUser(createdBy)).val().username;
         const channelName = (yield shared.getChannel(channelId)).val().name;
         const data = {
@@ -63,9 +75,18 @@ function created(current) {
         try {
             const installs = [];
             const promises = [];
-            for (const memberId of memberIds) {
-                promises.push(notify(memberId, installs));
+            const updates = {};
+            for (const notifyId of notifyIds) {
+                updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true;
+                updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at;
+                updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by;
+                updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at;
+                updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc;
+                updates[`member-channels/${notifyId}/${channelId}/activity_by`] = message.created_by;
+                promises.push(notify(notifyId, installs));
             }
+            yield shared.database.ref().update(updates);
             yield Promise.all(promises);
             if (installs.length > 0) {
                 yield notifications.sendMessages(installs, notificationText, data);
@@ -78,18 +99,6 @@ function created(current) {
         function notify(memberId, installs) {
             return __awaiter(this, void 0, void 0, function* () {
                 const unreads = ((yield shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1;
-                yield shared.database.ref(`unreads/${memberId}/${channelId}/${messageId}`).set(true);
-                const membership = yield shared.database.ref(`member-channels/${memberId}/${channelId}`).once('value');
-                /* Bump sort priority */
-                if (membership.val().priority !== 0) {
-                    const timestamp = membership.val().joined_at; // not a real timestamp, shortened to 10 digits
-                    yield membership.ref.update({
-                        priority: 0,
-                        index_priority_joined_at: parseInt('' + priorities[0] + timestamp),
-                        index_priority_joined_at_desc: parseInt('' + priorities_reversed[0] + timestamp) * -1,
-                    });
-                }
-                /* Find installs to notify */
                 const snaps = yield shared.database.ref(`installs/${memberId}`).once('value');
                 snaps.forEach((install) => {
                     if (install.key) {

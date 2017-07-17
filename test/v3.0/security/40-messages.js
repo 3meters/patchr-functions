@@ -5,7 +5,6 @@ const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
 const data = testUtil.generateData()
-const _ = require('lodash')
 
 /* jshint -W117 */
 
@@ -84,18 +83,17 @@ describe('Messages', function() {
       expect(users.jane).cannot.write(null).to.path(path)
       expect(users.tarzan).can.write(null).to.path(path)
     })
-
   })
 
   describe('Message reactions', function() {
 
-    it('jane can like and unlike her own message in private channel', function() {
+    it('jane can like and unlike her own message', function() {
       const path = "channel-messages/ch-privatexx/me-messagex1/reactions/:thumbsup:/us-janexxxxx"
       expect(users.jane).can.write(true).to.path(path)
       expect(users.jane).can.write(null).to.path(path)
     })
 
-    it('mary can like and unlike janes message in private channel', function() {
+    it('mary can like and unlike janes message', function() {
       const path = "channel-messages/ch-privatexx/me-messagex1/reactions/:thumbsup:/us-maryxxxxx"
       expect(users.mary).can.write(true).to.path(path)
       expect(users.mary).can.write(null).to.path(path)

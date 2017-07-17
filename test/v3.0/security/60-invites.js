@@ -26,8 +26,6 @@ describe('Invites', function() {
       created_at: 1484425797938,
       created_by: "us-tarzanxxx",
       email: "cheeta@jungle.com",
-      invited_at: 1484425797938,
-      invited_at_desc: -1484425797938,
       inviter: {
         email: "tarzan@jungle.com",
         id: "us-tarzanxxx",
