@@ -39,6 +39,7 @@ describe('Messages', function() {
       "created_at": 1444526248003,
       "created_at_desc": -1444526248003,
       "created_by": "us-janexxxxx",
+      "message_id": "-KrWb-uWAFkrKQAS4NA8",
       "modified_at": 1444526248003,
       "modified_by": "us-janexxxxx",
       "text": "Eat this."
@@ -100,9 +101,9 @@ describe('Messages', function() {
       expect(users.mary).can.write(true).to.path(path)
     })
 
-    it('tarzan cannot like janes message because he not a channel member', function() {
-      const path = "channel-messages/ch-privatexx/me-messagex1/reactions/:thumbsup:/us-tarzanxxx"
-      expect(users.tarzan).cannot.write(true).to.path(path)
+    it('cheeta cannot like janes message because he not a channel member', function() {
+      const path = "channel-messages/ch-privatexx/me-messagex1/reactions/:thumbsup:/us-cheetaxxx"
+      expect(users.cheeta).cannot.write(true).to.path(path)
     })
   })
 

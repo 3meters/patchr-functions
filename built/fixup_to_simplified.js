@@ -11,9 +11,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const admin = require("firebase-admin");
 const fs = require("fs");
 const _ = require("lodash");
+// admin.initializeApp({
+//   databaseURL: 'https://patchr-ios-dev.firebaseio.com',
+//   credential: admin.credential.cert('service-credentials-dev.json'),
+//   databaseAuthVariableOverride: {
+//     uid: 'patchr-cloud-worker',
+//   },
+// })
 admin.initializeApp({
-    databaseURL: 'https://patchr-ios-dev.firebaseio.com',
-    credential: admin.credential.cert('service-credentials-dev.json'),
+    databaseURL: 'https://patchr-ios.firebaseio.com',
+    credential: admin.credential.cert('service-credentials-prod.json'),
     databaseAuthVariableOverride: {
         uid: 'patchr-cloud-worker',
     },
@@ -112,7 +119,8 @@ function transformMembership() {
                     }
                     delete membership.archived;
                     delete membership.muted;
-                    membership.created_at = membership.created_at * 1000;
+                    delete membership.unread;
+                    membership.created_at = (membership.created_at < 15006661874) ? membership.created_at * 1000 : membership.created_at;
                     membership.activity_at = membership.created_at;
                     membership.activity_at_desc = membership.activity_at * -1;
                     membership.activity_by = membership.created_by;

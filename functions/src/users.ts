@@ -41,30 +41,16 @@ export async function createUser(task: any) {
   /* Add default general channel, channel trigger adds creator as member */
   const generalId = `ch-${utils.generateRandomId(9)}`
   const generalCode = utils.generateRandomId(12)
+  const generalTitle = `${req.username} channel`
   const general = {
     code: generalCode,
     created_at: timestamp,
     created_by: userId,
     general: true,
-    name: 'general',
     owned_by: userId,
-    title: 'General',
+    title: generalTitle,
   }
   updates[`channels/${generalId}`] = general
-
-  /* Add default chatter channel, channel trigger adds creator as member */
-  const chatterId = `ch-${utils.generateRandomId(9)}`
-  const chatterCode = utils.generateRandomId(12)
-  const chatter = {
-    code: chatterCode,
-    created_at: timestamp,
-    created_by: userId,
-    general: false,
-    name: 'chatter',
-    owned_by: userId,
-    title: 'Chatter',
-  }
-  updates[`channels/${chatterId}`] = chatter
 
   console.log(`Creating user: ${req.user_id}`)
 

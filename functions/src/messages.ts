@@ -20,10 +20,18 @@ export async function onWriteMessage(event: shared.DatabaseEvent) {
 async function created(current: shared.DeltaSnapshot) {
 
   const message = current.val()
-  const channelId: string = message.channel_id
   const messageId: string = current.key
+  const channelId: string = message.channel_id
+
+  if (current.val().moving) {
+    console.log(`Message moved: ${messageId} to: ${channelId}`)
+    const updates = { moving: null }
+    await current.adminRef.update(updates)
+    return 
+  }
+
   const createdBy: string = message.created_by
-  console.log(`Message created: ${messageId}`)
+  console.log(`Message created: ${messageId} for: ${channelId}`)
 
   /* Members that need activity tickle */
   const memberIds: string[] = await shared.getMemberIds(channelId)
@@ -40,7 +48,7 @@ async function created(current: shared.DeltaSnapshot) {
     await shared.database.ref().update(updates)
   }
 
-  /* Gather list of channel members to notify */
+  /* For channel members except muted or author: notify, flag unread, tickle activity */
   const notifyIds: string[] = await shared.getMembersToNotify(channelId, [message.created_by])
   if (notifyIds.length === 0) { return }
 
@@ -69,16 +77,15 @@ async function created(current: shared.DeltaSnapshot) {
     const updates = {}
     for (const notifyId of notifyIds) {
       updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true
+      /* Trigger will mirror these updates to 'member-channels' */
       updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at
       updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc
       updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by
-      updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at
-      updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc
-      updates[`member-channels/${notifyId}/${channelId}/activity_by`] = message.created_by
       promises.push(notify(notifyId, installs))
     }
     await shared.database.ref().update(updates)
     await Promise.all(promises)
+
     if (installs.length > 0) {
       await notifications.sendMessages(installs, notificationText, data)
     }
@@ -102,9 +109,10 @@ async function created(current: shared.DeltaSnapshot) {
 
 async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
   const messageId: string = current.key
+  const channelId: string = current.val().channel_id
   const previousPhoto: any = shared.getPhotoFromMessage(previous.val())
   const currentPhoto: any = shared.getPhotoFromMessage(current.val())
-  console.log(`Message updated: ${messageId}`)
+  console.log(`Message updated: ${messageId} for: ${channelId}`)
 
   if (previousPhoto) {
     if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
@@ -120,7 +128,7 @@ async function deleted(previous: DeltaSnapshot) {
   const channelId: string =  previous.val().channel_id
   const messageId: string = previous.key
   const photo: any = shared.getPhotoFromMessage(previous.val())
-  console.log(`Message deleted: ${messageId}`)
+  console.log(`Message deleted: ${messageId} for: ${channelId}`)
   
   /* Clear unread flag for each member */
   const memberIds: string[] = await shared.getMemberIds(channelId)
@@ -129,14 +137,38 @@ async function deleted(previous: DeltaSnapshot) {
     memberIds.forEach((memberId) => {
       updates[`unreads/${memberId}/${channelId}/${messageId}`] = null
     })
+    updates[`message-comments/${channelId}/${messageId}`] = null
     await shared.database.ref().update(updates)
   }
 
+  /* Clear comments */
+  const updates = {}
+  updates[`message-comments/${channelId}/${messageId}`] = null
+  await shared.database.ref().update(updates)
+
   /* Delete image file if needed */
-  if (photo) {
+  if (photo && !previous.val().moving) {
     if (photo.source === 'google-storage') {
       console.log(`Deleting image file: ${photo.filename}`)
       await shared.deleteImageFile(photo.filename)
     }
+  }
+}
+
+export async function onWriteCommentsCounter(event: shared.DatabaseEvent) {
+  if (shared.getAction(event) !== Action.delete) { return }
+  if (!event.params) { return }
+  const channelId = event.params.channelId
+  const messageId = event.params.messageId
+  const countRef = shared.database.ref(`/channel-messages/${channelId}/${messageId}/comment_count`)
+  const commentsRef = shared.database.ref(`/message-comments/${channelId}/${messageId}`)
+
+  try {
+    const comments: DataSnapshot = await commentsRef.once('value')
+    const count = comments.numChildren()
+    await countRef.set(count)
+    console.log(`Recounting comments for ${messageId} total ${count}`)
+  } catch (err) {
+    console.error(`Error counting comments: ${err.message}`)
   }
 }

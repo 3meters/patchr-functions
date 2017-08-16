@@ -70,27 +70,6 @@ describe('Operational', function() {
     })
   })
 
-  describe('Typing indicator security', function() {
-    it('only typer, channel member and worker can write', function() {
-      const path = 'typing/ch-generalxx/us-janexxxxx'
-      expect(users.unauth).cannot.write("jane").to.path(path)
-      expect(users.cheeta).cannot.write("jane").to.path(path)
-      expect(users.mary).cannot.write("jane").to.path(path)
-      expect(users.tarzan).cannot.write("jane").to.path(path)
-      expect(users.worker).can.write("jane").to.path(path)
-      expect(users.jane).can.write("jane").to.path(path)
-    })
-    it('only channel member or worker can read typers for the channel', function() {
-      const path = 'typing/ch-generalxx'
-      expect(users.unauth).cannot.read.path(path)
-      expect(users.cheeta).cannot.read.path(path)
-      expect(users.mary).can.read.path(path)
-      expect(users.worker).can.read.path(path)
-      expect(users.jane).can.read.path(path)
-      expect(users.tarzan).can.read.path(path)
-    })
-  })
-
   describe('Unreads security', function() {
     it('only worker can create unreads', function() {
       const path = 'unreads/us-janexxxxx/ch-generalxx/me-messagex1'

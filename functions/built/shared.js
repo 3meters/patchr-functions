@@ -90,6 +90,15 @@ function getChannel(channelId) {
     });
 }
 exports.getChannel = getChannel;
+function getMessage(channelId, messageId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const value = yield exports.database
+            .ref(`channel-messages/${channelId}/${messageId}`)
+            .once('value');
+        return value;
+    });
+}
+exports.getMessage = getMessage;
 function getPhotoFromMessage(message) {
     if (message.attachments) {
         for (const prop in message.attachments) {

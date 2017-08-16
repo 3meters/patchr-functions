@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions'
 import * as channel_members from './channel-members'
 import * as channels from './channels'
+import * as comments from './comments'
 import * as invites from './invites'
 import * as messages from './messages'
 import * as shared from './shared'
@@ -18,6 +19,16 @@ export let onWriteChannel = functions
   .database
   .ref('/channels/{channelId}')
   .onWrite(async (event) => await channels.onWriteChannel(event))
+
+export let onCreateComment = functions
+  .database
+  .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+  .onCreate(async (event) => await comments.onWriteComment(event))
+
+export let onDeleteComment = functions
+  .database
+  .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+  .onDelete(async (event) => await comments.onWriteComment(event))
 
 export let onCreateUnread = functions
   .database

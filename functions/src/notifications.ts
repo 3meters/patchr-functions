@@ -21,7 +21,9 @@ export async function sendMessages(installs: any[], message: string, payloadData
   }
 
   for (const install of installs) {
-    payload.notification.badge = '' + install.unreads
+    if (install.unreads) {
+      payload.notification.badge = '' + install.unreads // force to string
+    }
     const token: string = install.id
     const userId: string = install.userId
     const response: Response = await shared.messaging.sendToDevice(token, payload, options)

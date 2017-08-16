@@ -13,30 +13,49 @@ exports.generateData = function generateData(exclude) {
   if (!exclusions.installs) addInstalls(data)
   if (!exclusions.invites) addInvites(data)
   if (!exclusions.memberChannels) addMemberChannels(data)
+  if (!exclusions.messageComments) addMessageComments(data)
   if (!exclusions.tasks) addTasks(data)
-  if (!exclusions.typing) addTyping(data)
   if (!exclusions.unreads) addUnreads(data)
   if (!exclusions.usernames) addUsernames(data)
   if (!exclusions.users) addUsers(data)
   return data
 }
 
-function addClients(data) {
-  data.clients = {
-    "android": 134,
-    "ios": 127
-  }
-  return data
-}
-
-function addCounters(data) {
-  data.counters = {
-    "us-tarzanxxx": {
-      "unreads": 1
+function addChannels(data) {
+  data["channels"] = {
+    "ch-generalxx": {
+      "code": "abcdefghijkl",
+      "created_at": 1481392125882,
+      "created_by": "us-tarzanxxx",
+      "general": true,
+      "name": "chatter",
+      "owned_by": "us-tarzanxxx",
     },
-    "us-maryxxxxx": {
-      "unreads": 1
-    }
+    "ch-chatterxx": {
+      "code": "abcdefghijkl",
+      "created_at": 1481392125882,
+      "created_by": "us-tarzanxxx",
+      "general": true,
+      "name": "general",
+      "owned_by": "us-tarzanxxx",
+      "title": "General",
+    },
+    "ch-privatexx": {
+      "code": "abcdefghijkl",
+      "created_at": 1410520607434,
+      "created_by": "us-janexxxxx",
+      "general": false,
+      "name": "birthday-surprise",
+      "owned_by": "us-janexxxxx",
+      "photo": {
+        "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
+        "height": 1280,
+        "source": "google-storage",
+        "width": 960
+      },
+      "purpose": "Surprise party for Tarzan!",
+      "title": "Birthday Surprise",
+    },
   }
   return data
 }
@@ -102,7 +121,7 @@ function addChannelMembers(data) {
         "starred": false
       }
     },
-    "ch-privatexx": {
+    "ch-privatexx": { // jane is channel.owned_by
       "us-janexxxxx": {
         "code": "abcdefghijkl",
         "created_at": 1481392125000,
@@ -122,49 +141,21 @@ function addChannelMembers(data) {
         "activity_at_desc": -1481392125000,
         "activity_by": "us-tarzanxxx",
         "notifications": "all",
+        "role": "owner",
+        "starred": false
+      },
+      "us-tarzanxxx": {
+        "code": "abcdefghijkl",
+        "created_at": 1481392125000,
+        "created_by": "us-tarzanxxx",
+        "activity_at": 1481392125000,
+        "activity_at_desc": -1481392125000,
+        "activity_by": "us-tarzanxxx",
+        "notifications": "all",
         "role": "reader",
         "starred": false
-      }
-    }
-  }
-  return data
-}
-
-function addChannels(data) {
-  data["channels"] = {
-    "ch-generalxx": {
-      "code": "abcdefghijkl",
-      "created_at": 1481392125882,
-      "created_by": "us-tarzanxxx",
-      "general": true,
-      "name": "chatter",
-      "owned_by": "us-tarzanxxx",
-    },
-    "ch-chatterxx": {
-      "code": "abcdefghijkl",
-      "created_at": 1481392125882,
-      "created_by": "us-tarzanxxx",
-      "general": true,
-      "name": "general",
-      "owned_by": "us-tarzanxxx",
-      "title": "General",
-    },
-    "ch-privatexx": {
-      "code": "abcdefghijkl",
-      "created_at": 1410520607434,
-      "created_by": "us-janexxxxx",
-      "general": false,
-      "name": "birthday-surprise",
-      "owned_by": "us-janexxxxx",
-      "photo": {
-        "filename": "us.140912.40308.863.812138_20140912_164642.jpg",
-        "height": 1280,
-        "source": "google-storage",
-        "width": 960
       },
-      "purpose": "Surprise party for Tarzan!",
-      "title": "Birthday Surprise",
-    },
+    }
   }
   return data
 }
@@ -213,6 +204,26 @@ function addChannelMessages(data) {
           }
         }
       }
+    }
+  }
+  return data
+}
+
+function addClients(data) {
+  data.clients = {
+    "android": 134,
+    "ios": 127
+  }
+  return data
+}
+
+function addCounters(data) {
+  data.counters = {
+    "us-tarzanxxx": {
+      "unreads": 1
+    },
+    "us-maryxxxxx": {
+      "unreads": 1
     }
   }
   return data
@@ -332,6 +343,40 @@ function addMemberChannels(data) {
   return data
 }
 
+function addMessageComments(data) {
+  data["message-comments"] = {
+    "ch-generalxx": {
+      "me-messagex1": {
+        "co-commentx1": {
+          "channel_id": "ch-generalxx",
+          "created_at": 1444526248003,
+          "created_at_desc": -1444526248003,
+          "created_by": "us-janexxxxx",
+          "message_id": "me-messagex1",
+          "modified_at": 1444526248033,
+          "modified_by": "us-janexxxxx",
+          "text": "Reach up and shake branch dummy."
+        }
+      }
+    },
+    "ch-privatexx": {
+      "me-messagex1": {
+        "co-commentx1": {
+          "channel_id": "ch-privatexx",
+          "created_at": 1444526248003,
+          "created_at_desc": -1444526248003,
+          "created_by": "us-maryxxxxx",
+          "message_id": "me-messagex1",
+          "modified_at": 1444526248033,
+          "modified_by": "us-maryxxxxx",
+          "text": "I will make sure Cheeta is out for the night."
+        }
+      }
+    },
+  }
+  return data
+}
+
 function addTasks(data) {
   data.tasks = {
     "create-user": {
@@ -344,15 +389,6 @@ function addTasks(data) {
         }
       }
     },
-  }
-  return data
-}
-
-function addTyping(data) {
-  data.typing = {
-    "ch-generalxx": {
-      "us-tarzanxxx": "tarzan"
-    }
   }
   return data
 }

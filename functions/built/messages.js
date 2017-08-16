@@ -31,10 +31,16 @@ exports.onWriteMessage = onWriteMessage;
 function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const message = current.val();
-        const channelId = message.channel_id;
         const messageId = current.key;
+        const channelId = message.channel_id;
+        if (current.val().moving) {
+            console.log(`Message moved: ${messageId} to: ${channelId}`);
+            const updates = { moving: null };
+            yield current.adminRef.update(updates);
+            return;
+        }
         const createdBy = message.created_by;
-        console.log(`Message created: ${messageId}`);
+        console.log(`Message created: ${messageId} for: ${channelId}`);
         /* Members that need activity tickle */
         const memberIds = yield shared.getMemberIds(channelId);
         if (memberIds.length > 0) {
@@ -113,9 +119,10 @@ function created(current) {
 function updated(previous, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const messageId = current.key;
+        const channelId = current.val().channel_id;
         const previousPhoto = shared.getPhotoFromMessage(previous.val());
         const currentPhoto = shared.getPhotoFromMessage(current.val());
-        console.log(`Message updated: ${messageId}`);
+        console.log(`Message updated: ${messageId} for: ${channelId}`);
         if (previousPhoto) {
             if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
                 if (previousPhoto.source === 'google-storage') {
@@ -131,7 +138,7 @@ function deleted(previous) {
         const channelId = previous.val().channel_id;
         const messageId = previous.key;
         const photo = shared.getPhotoFromMessage(previous.val());
-        console.log(`Message deleted: ${messageId}`);
+        console.log(`Message deleted: ${messageId} for: ${channelId}`);
         /* Clear unread flag for each member */
         const memberIds = yield shared.getMemberIds(channelId);
         if (memberIds.length > 0) {
@@ -139,10 +146,15 @@ function deleted(previous) {
             memberIds.forEach((memberId) => {
                 updates[`unreads/${memberId}/${channelId}/${messageId}`] = null;
             });
+            updates[`message-comments/${channelId}/${messageId}`] = null;
             yield shared.database.ref().update(updates);
         }
+        /* Clear comments */
+        const updates = {};
+        updates[`message-comments/${channelId}/${messageId}`] = null;
+        yield shared.database.ref().update(updates);
         /* Delete image file if needed */
-        if (photo) {
+        if (photo && !previous.val().moving) {
             if (photo.source === 'google-storage') {
                 console.log(`Deleting image file: ${photo.filename}`);
                 yield shared.deleteImageFile(photo.filename);
@@ -150,4 +162,28 @@ function deleted(previous) {
         }
     });
 }
+function onWriteCommentsCounter(event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (shared.getAction(event) !== Action.delete) {
+            return;
+        }
+        if (!event.params) {
+            return;
+        }
+        const channelId = event.params.channelId;
+        const messageId = event.params.messageId;
+        const countRef = shared.database.ref(`/channel-messages/${channelId}/${messageId}/comment_count`);
+        const commentsRef = shared.database.ref(`/message-comments/${channelId}/${messageId}`);
+        try {
+            const comments = yield commentsRef.once('value');
+            const count = comments.numChildren();
+            yield countRef.set(count);
+            console.log(`Recounting comments for ${messageId} total ${count}`);
+        }
+        catch (err) {
+            console.error(`Error counting comments: ${err.message}`);
+        }
+    });
+}
+exports.onWriteCommentsCounter = onWriteCommentsCounter;
 //# sourceMappingURL=messages.js.map

@@ -86,16 +86,13 @@
         "$other": {
           ".validate": "false"
         },
-        ".write": "data.val() == null && auth != null || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
+        ".write": "data.val() == null && auth != null || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && data.child('general').val() == false && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
         ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
-      },
-      ".indexOn": [
-        "name"
-      ]
+      }
     },
     "channel-members": {
       "$channelId": {
-        ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
+        ".read": "auth != null && (root.child('channel-members').child($channelId).child(auth.uid).val() != null || root.child('channels').child($channelId).child('owned_by').val() == auth.uid)",
         "$userId": {
           ".validate": "newData.hasChildren(['activity_at', 'activity_at_desc', 'activity_by', 'code', 'created_at', 'created_by', 'notifications', 'role', 'starred'])",
           "activity_at": {
@@ -120,7 +117,8 @@
             ".validate": "newData.isString() && (newData.val() == 'all' || newData.val() == 'posts_only' || newData.val() == 'none')"
           },
           "role": {
-            ".validate": "newData.isString() && (newData.val() == 'owner' || newData.val() == 'editor' || newData.val() == 'reader')"
+            ".validate": "newData.isString() && (newData.val() == 'owner' || newData.val() == 'editor' || newData.val() == 'reader') && newData.isString() && (newData.val() == 'owner' || newData.val() == 'editor' || newData.val() == 'reader')",
+            ".write": "auth != null && (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner') && root.child('channels').child($channelId).child('owned_by').val() != $userId"
           },
           "starred": {
             ".validate": "newData.isBoolean()"
@@ -128,7 +126,7 @@
           "$other": {
             ".validate": "false"
           },
-          ".write": "data.val() == null && auth != null && root.child('channels').child($channelId).val() != null && root.child('channels').child($channelId).child('code').val() == newData.child('code').val() || data.val() != null && newData.val() != null && auth != null && (data.child('created_by').val() == auth.uid && newData.child('role').val() == data.child('role').val() || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
+          ".write": "data.val() == null && auth != null && root.child('channels').child($channelId).val() != null && root.child('channels').child($channelId).child('code').val() == newData.child('code').val() || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid && newData.child('role').val() == data.child('role').val() || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner')) && root.child('channels').child($channelId).child('owned_by').val() != $userId"
         }
       }
     },
@@ -179,6 +177,9 @@
           "channel_id": {
             ".validate": "newData.isString() && newData.val().length == 12"
           },
+          "comment_count": {
+            ".validate": "newData.isNumber()"
+          },
           "created_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
           },
@@ -189,13 +190,16 @@
             ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
           },
           "message_id": {
-            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+            ".validate": "newData.isString() && newData.val().length == 20"
           },
           "modified_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
           },
           "modified_by": {
             ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+          },
+          "moving": {
+            ".validate": "newData.isBoolean()"
           },
           "reactions": {
             "$key3": {
@@ -213,7 +217,7 @@
           "$other": {
             ".validate": "false"
           },
-          ".write": "data.val() == null && auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null && !(root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'reader') || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
+          ".write": "data.val() == null && auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null && (root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner' || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'editor') || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
         }
       }
     },
@@ -271,6 +275,9 @@
         "link": {
           ".validate": "newData.isString() && newData.val().length <= 256"
         },
+        "message": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
         "role": {
           ".validate": "newData.isString() && (newData.val() == 'owner' || newData.val() == 'editor' || newData.val() == 'reader')"
         },
@@ -284,8 +291,104 @@
       "$userId": {
         ".read": "auth != null && auth.uid == $userId",
         ".indexOn": [
-          "index_priority_joined_at_desc"
+          "activity_date_desc",
+          "created_at",
+          "starred",
+          "role"
         ]
+      }
+    },
+    "message-comments": {
+      "$channelId": {
+        ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
+        "$messageId": {
+          "$commentId": {
+            ".validate": "newData.hasChildren(['channel_id', 'created_at', 'created_at_desc', 'created_by', 'modified_at', 'modified_by'])",
+            "attachments": {
+              "$key2": {
+                ".validate": "$key2.length == 12 && newData.hasChildren() && newData.hasChildren(['photo'])",
+                "photo": {
+                  ".validate": "newData.hasChildren() && newData.hasChildren(['filename', 'source'])",
+                  "filename": {
+                    ".validate": "newData.isString() && newData.val().endsWith('.jpg') && newData.val().length <= 100"
+                  },
+                  "height": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "location": {
+                    "$key1": {
+                      ".validate": "newData.isNumber()"
+                    },
+                    ".validate": "newData.hasChildren() && newData.child('lat').val() != null && newData.child('lng').val() != null"
+                  },
+                  "source": {
+                    ".validate": "newData.isString() && newData.val() == 'google-storage'"
+                  },
+                  "taken_at": {
+                    ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+                  },
+                  "uploading": {
+                    ".validate": "newData.isBoolean()"
+                  },
+                  "width": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "$other": {
+                    ".validate": "false"
+                  }
+                },
+                "$other": {
+                  ".validate": "false"
+                }
+              },
+              ".validate": "newData.hasChildren()"
+            },
+            "channel_id": {
+              ".validate": "newData.isString() && newData.val().length == 12"
+            },
+            "comment_count": {
+              ".validate": "newData.isNumber()"
+            },
+            "created_at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+            },
+            "created_at_desc": {
+              ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
+            },
+            "created_by": {
+              ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+            },
+            "message_id": {
+              ".validate": "newData.isString() && newData.val().length == 20"
+            },
+            "modified_at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+            },
+            "modified_by": {
+              ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+            },
+            "moving": {
+              ".validate": "newData.isBoolean()"
+            },
+            "reactions": {
+              "$key3": {
+                ".validate": "newData.hasChildren() && ($key3 == ':thumbsup:' || $key3 == ':thumbsdown:' || $key3 == ':grinning:' || $key3 == ':tada:' || $key3 == ':clap:' || $key3 == ':100:' || $key3 == ':poop:' || $key3 == ':confused:' || $key3 == ':heart:' || $key3 == ':smiley_cat:' || $key3 == ':smiling_imp:' || $key3 == ':muscle:' || $key3 == ':zzz:' || $key3 == ':cocktail:' || $key3 == ':trophy:' || $key3 == ':fireworks:' || $key3 == ':gift:' || $key3 == ':astonished:' || $key3 == ':drooling_face:' || $key3 == ':sleeping:' || $key3 == ':yum:' || $key3 == ':laughing:' || $key3 == ':heart_eyes:' || $key3 == ':bulb:') && newData.hasChildren() && ($key3 == ':thumbsup:' || $key3 == ':thumbsdown:' || $key3 == ':grinning:' || $key3 == ':tada:' || $key3 == ':clap:' || $key3 == ':100:' || $key3 == ':poop:' || $key3 == ':confused:' || $key3 == ':heart:' || $key3 == ':smiley_cat:' || $key3 == ':smiling_imp:' || $key3 == ':muscle:' || $key3 == ':zzz:' || $key3 == ':cocktail:' || $key3 == ':trophy:' || $key3 == ':fireworks:' || $key3 == ':gift:' || $key3 == ':astonished:' || $key3 == ':drooling_face:' || $key3 == ':sleeping:' || $key3 == ':yum:' || $key3 == ':laughing:' || $key3 == ':heart_eyes:' || $key3 == ':bulb:')",
+                "$key4": {
+                  ".validate": "($key4.length == 28 || $key4.length == 12) && newData.isBoolean() && ($key4.length == 28 || $key4.length == 12) && newData.isBoolean()"
+                }
+              },
+              ".validate": "newData.hasChildren()",
+              ".write": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 4000"
+            },
+            "$other": {
+              ".validate": "false"
+            },
+            ".write": "data.val() == null && auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
+          }
+        }
       }
     },
     "tasks": {
@@ -327,15 +430,6 @@
           },
           ".write": "data.val() == null && auth != null && newData.child('created_by').val() == auth.uid && (newData.child('request').child('user_id').val() == auth.uid || newData.child('user_id').val() == auth.uid) || data.val() != null && newData.val() == null && auth != null && data.child('created_by').val() == auth.uid",
           ".read": "auth != null && data.child('created_by').val() == auth.uid"
-        }
-      }
-    },
-    "typing": {
-      "$channelId": {
-        ".read": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
-        "$userId": {
-          ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 21 && newData.val() == newData.val().toLowerCase()",
-          ".write": "auth != null && auth.uid == $userId && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
         }
       }
     },
@@ -434,10 +528,7 @@
           ".validate": "false"
         },
         ".read": "auth != null"
-      },
-      ".indexOn": [
-        "email"
-      ]
+      }
     }
   }
 }

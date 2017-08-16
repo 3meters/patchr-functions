@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const channel_members = require("./channel-members");
 const channels = require("./channels");
+const comments = require("./comments");
 const invites = require("./invites");
 const messages = require("./messages");
 const shared = require("./shared");
@@ -25,6 +26,14 @@ exports.onWriteChannel = functions
     .database
     .ref('/channels/{channelId}')
     .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield channels.onWriteChannel(event); }));
+exports.onCreateComment = functions
+    .database
+    .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
+exports.onDeleteComment = functions
+    .database
+    .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
 exports.onCreateUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}')

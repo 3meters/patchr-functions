@@ -42,17 +42,17 @@ function sendInviteEmail(invite) {
         const personalization = new sendgrid_1.mail.Personalization();
         const fromEmail = new sendgrid_1.mail.Email('noreply@patchr.com', 'Patchr');
         mail.setFrom(fromEmail);
-        if (invite.role === 'reader') {
-            mail.setTemplateId('20036bc8-5a3c-4df2-8c3c-ee99df3b047f');
-        }
-        else {
-            mail.setTemplateId('de969f30-f3a0-4aa3-8f91-9d349831f0f9');
-        }
+        mail.setTemplateId(invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9');
+        const role = invite.role === 'editor' ? 'contributor' : invite.role;
         personalization.addTo(new sendgrid_1.mail.Email(invite.email));
         personalization.addSubstitution(new sendgrid_1.mail.Substitution('-channel.title-', invite.channel.title));
         personalization.addSubstitution(new sendgrid_1.mail.Substitution('-user.title-', invite.inviter.title));
         personalization.addSubstitution(new sendgrid_1.mail.Substitution('-user.email-', invite.inviter.email));
+        personalization.addSubstitution(new sendgrid_1.mail.Substitution('-role-', role));
         personalization.addSubstitution(new sendgrid_1.mail.Substitution('-link-', invite.link));
+        if (invite.message) {
+            personalization.addSubstitution(new sendgrid_1.mail.Substitution('-message-', invite.message));
+        }
         mail.addPersonalization(personalization);
         const jsonEmail = mail.toJSON();
         const sendgrid = require('sendgrid')(SENDGRID_API_KEY);

@@ -77,6 +77,13 @@ export async function getChannel(channelId: string) {
   return value
 }
 
+export async function getMessage(channelId: string, messageId: string) {
+  const value: DataSnapshot = await database
+    .ref(`channel-messages/${channelId}/${messageId}`)
+    .once('value')
+  return value
+}
+
 export function getPhotoFromMessage(message: any) {
   if (message.attachments) {
     for (const prop in message.attachments) {

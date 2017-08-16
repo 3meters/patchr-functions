@@ -4,7 +4,6 @@ const rules = targaryen.json.loadSync('rules/database.rules.json')
 const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
-const _ = require('lodash');
 /* jshint -W117 */
 
 chai.use(targaryen)
@@ -20,28 +19,14 @@ describe('Channel Membership', function() {
     targaryen.setFirebaseRules(rules)
   })
 
-  /* Join: channel owners can add other group members including themselves
-   * Join: group members can self join any public channel.
-   * Join: using invite from channel member (may or may not already be group member).
-   * Update: worker, owner and channel owner
-   * Delete: worker, owner, and channel owner (as part of group/channel delete) */
-
-  /* Group membership in data
-   * us-tarzanxxx: gr-treehouse
-   * us-janexxxxx: gr-treehouse
-   * us-maryxxxxx: gr-janetimex
-   * us-cheetaxxx: gr-janetimex */
-
-  /* All invites are from us-janexxxxx
-   * in-treehous1: pending, guest, gr-treehouse, ch-privatexx
-   * in-treehous2: accepted, guest, gr-treehouse, ch-privatexx
-   * in-treehous3: pending, member, gr-treehouse, ch-chatterxx
-   * in-janetime1: pending, member, gr-janetimex
-   * in-janetime2: accepted, member, gr-janetimex */
+  /* Channel membership in data
+   * us-tarzanxxx: ch-generalxx (owner), ch-chatterxx (owner)
+   * us-janexxxxx: ch-generalxx (editor), ch-chatterxx (editor), ch-privatexx (owner)
+   * us-maryxxxxx: ch-generalxx (editor), ch-privatexx (reader) */
 
   describe('Channel membership writes', function() {
 
-    let pathCheeta = `channel-members/ch-chatterxx/${users.cheeta.uid}` // Not treehouse member
+    let pathCheeta = `channel-members/ch-chatterxx/${users.cheeta.uid}` // Not chatter member
 
     it('can only join a channel using the channel code shared by the channel member', function() {
       let membership = membershipFrom(users.cheeta.uid, "editor", "zzcdefghijkl")
@@ -59,22 +44,49 @@ describe('Channel Membership', function() {
       targaryen.setFirebaseRules(rules)
     })
 
-    it('only worker, creator, owner (group or channel) can update channel membership', function() {
+    it('only worker, creator, role owner can update channel membership', function() {
       const path = "channel-members/ch-generalxx/us-janexxxxx"
       expect(users.cheeta).cannot.write("none").to.path(path + "/notifications")
       expect(users.mary).cannot.write("none").to.path(path + "/notifications")
+      expect(users.tarzan).cannot.write("none").to.path(path + "/notifications") // role owner, channel owner
       expect(users.jane).can.write("none").to.path(path + "/notifications") // creator
-      expect(users.tarzan).can.write("none").to.path(path + "/notifications") // channel owner
       expect(users.worker).can.write("none").to.path(path + "/notifications")
     })
 
-    it('only worker and channel owner can update public channel role', function() {
+    it('worker and role owner can update channel role', function() {
       const path = "channel-members/ch-generalxx/us-maryxxxxx"
       expect(users.cheeta).cannot.write("owner").to.path(path + "/role")
       expect(users.mary).cannot.write("owner").to.path(path + "/role") // creator
       expect(users.jane).cannot.write("owner").to.path(path + "/role") 
-      expect(users.tarzan).can.write("owner").to.path(path + "/role") // channel owner, group primary owner
+      expect(users.tarzan).can.write("owner").to.path(path + "/role") // channel owner
       expect(users.worker).can.write("owner").to.path(path + "/role")
+    })
+
+    it('channel owner or role owner can update channel role', function() {
+      const path = "channel-members/ch-privatexx/us-tarzanxxx"
+      expect(users.cheeta).cannot.write("editor").to.path(path + "/role") // no status
+      expect(users.tarzan).cannot.write("editor").to.path(path + "/role") // role reader
+      expect(users.mary).can.write("editor").to.path(path + "/role") // role owner
+      expect(users.jane).can.write("editor").to.path(path + "/role") // channel owner
+      expect(users.worker).can.write("editor").to.path(path + "/role")
+    })
+
+    it('channel owner cannot update role', function() {
+      const path = "channel-members/ch-privatexx/us-janexxxxx"
+      expect(users.cheeta).cannot.write("editor").to.path(path + "/role") // no status
+      expect(users.tarzan).cannot.write("editor").to.path(path + "/role") // role reader
+      expect(users.mary).cannot.write("editor").to.path(path + "/role") // role owner
+      expect(users.jane).cannot.write("editor").to.path(path + "/role") // channel owner
+      expect(users.worker).can.write("editor").to.path(path + "/role")
+    })
+
+    it('channel owner cannot delete membership', function() {
+      const path = "channel-members/ch-privatexx/us-janexxxxx"
+      expect(users.cheeta).cannot.write(null).to.path(path) // no status
+      expect(users.tarzan).cannot.write(null).to.path(path) // role reader
+      expect(users.mary).cannot.write(null).to.path(path) // role owner
+      expect(users.jane).cannot.write(null).to.path(path) // channel owner
+      expect(users.worker).can.write(null).to.path(path)
     })
 
     it('only worker, creator, or channel owner delete channel membership', function() {
@@ -112,11 +124,11 @@ describe('Channel Membership', function() {
 
     it('only channel member or worker can read user memberships for a private channel', function() {
       const path = "channel-members/ch-privatexx"
-      expect(users.cheeta).cannot.read.path(path)
-      expect(users.tarzan).cannot.read.path(path)
+      expect(users.cheeta).cannot.read.path(path) // no status
+      expect(users.tarzan).can.read.path(path) // role reader
+      expect(users.jane).can.read.path(path) // channel owner
+      expect(users.mary).can.read.path(path) // role owner
       expect(users.worker).can.read.path(path)
-      expect(users.jane).can.read.path(path)
-      expect(users.mary).can.read.path(path)
     })
   })
 

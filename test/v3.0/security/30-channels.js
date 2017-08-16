@@ -5,7 +5,6 @@ const expect = chai.expect
 const testUtil = require('./util.js')
 const users = testUtil.users
 const data = testUtil.generateData()
-const _ = require('lodash');
 
 /* jshint -W117 */
 
@@ -45,25 +44,25 @@ describe('Channels', function() {
     it('channel can only be updated by channel owner or worker', function() {
       const path = "channels/ch-privatexx"
       expect(users.cheeta).cannot.write("Huge surprise party for Tarzan!").to.path(path + "/purpose")
-      expect(users.mary).cannot.write("Huge surprise party for Tarzan!").to.path(path + "/purpose")
+      expect(users.mary).can.write("Huge surprise party for Tarzan!").to.path(path + "/purpose") // role owner
       expect(users.worker).can.write("Huge surprise party for Tarzan!").to.path(path + "/purpose")
-      expect(users.jane).can.write("Huge surprise party for Tarzan!").to.path(path + "/purpose")
+      expect(users.jane).can.write("Huge surprise party for Tarzan!").to.path(path + "/purpose") // channel owner
     })
 
     it('channel can only be deleted by owner, creator or worker', function() {
       const path = "channels/ch-privatexx"
       expect(users.cheeta).cannot.write(null).to.path(path)
-      expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.jane).can.write(null).to.path(path) // Channel creator and owner
+      expect(users.mary).can.write(null).to.path(path) // role owner
+      expect(users.jane).can.write(null).to.path(path) // channel creator and owner
       expect(users.worker).can.write(null).to.path(path)
     })
 
-    it('general channel cannot be deleted by anyone except owner, creator or worker', function() {
+    it('general channel can only be deleted by worker', function() {
       const path = "channels/ch-generalxx"
       expect(users.cheeta).cannot.write(null).to.path(path)
       expect(users.mary).cannot.write(null).to.path(path)
-      expect(users.jane).cannot.write(null).to.path(path) // Channel member
-      expect(users.tarzan).can.write(null).to.path(path) // Channel creator and owner
+      expect(users.jane).cannot.write(null).to.path(path)
+      expect(users.tarzan).cannot.write(null).to.path(path)
       expect(users.worker).can.write(null).to.path(path)
     })
   })

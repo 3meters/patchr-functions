@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Message processing
  */
 const shared = require("./shared");
-const utils = require("./utils");
 const Action = shared.Action;
 function onWriteChannel(event) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -34,12 +33,11 @@ function created(current) {
         console.log(`Channel created: ${channelId}`);
         const userId = current.val().created_by;
         const timestamp = Date.now();
-        const code = utils.generateRandomId(12);
         const slug = shared.slugify(current.val().title);
+        const code = current.val().code;
         const membership = shared.channelMemberMap(userId, timestamp, 'owner', code);
         const updates = {};
         updates[`channels/${channelId}/name`] = slug;
-        updates[`channels/${channelId}/code`] = code;
         updates[`channel-members/${channelId}/${userId}/`] = membership;
         /* Submit updates */
         yield shared.database.ref().update(updates);

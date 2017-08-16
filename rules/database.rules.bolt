@@ -17,8 +17,8 @@ path /counters/{userId}/unreads is Number {
 path /channels/{channelId} is Channel {
     /* - Create: any user can create a channel
        - Read: only channel members can read the channel.
-       - Update: only channel owner can update the channel 
-       - Delete: only channel owner can delete the channel */
+       - Update: only owner can update the channel 
+       - Delete: only owner can delete a non-general channel */
     create() { 
         isLoggedIn()}
     read() {
@@ -27,34 +27,40 @@ path /channels/{channelId} is Channel {
         isLoggedIn() && (isCreatorOf(this) || 
             isChannelOwner(channelId, auth.uid))}    
     delete() { 
-        isLoggedIn() && (isCreatorOf(this) || 
+        isLoggedIn() && prior(this).general == false && (isCreatorOf(this) || 
             isChannelOwner(channelId, auth.uid))}    
 }
 path /channel-members/{channelId} {
     read() { 
-        isLoggedIn() && isChannelMember(channelId, auth.uid)}
+        isLoggedIn() && (isChannelMember(channelId, auth.uid) || isChannelPrimaryOwner(channelId, auth.uid))}
 }
 path /channel-members/{channelId}/{userId} is ChannelMember {
     create() { 
         isLoggedIn() && channelExists(channelId) && isChannelCode(channelId, this.code)}
     update() { 
-        isLoggedIn() && ((isCreatorOf(this) && this.role == prior(this.role)) ||
-            isChannelOwner(channelId, auth.uid))}
+        isLoggedIn() && 
+        isCreatorOf(this) && this.role == prior(this.role)}
     delete() { 
-        isLoggedIn() && (isCreatorOf(this) || 
-            isChannelOwner(channelId, auth.uid))}
+        isLoggedIn() && (isCreatorOf(this) || isChannelOwner(channelId, auth.uid)) && 
+        prior(root)["channels"][channelId].owned_by != userId}
+}
+path /channel-members/{channelId}/{userId}/role is ChannelRole {
+    write() {
+        isLoggedIn() && 
+        isChannelOwner(channelId, auth.uid) &&
+        prior(root)["channels"][channelId].owned_by != userId}        
 }
 path /channel-messages/{channelId} {
     read() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
 }
 path /channel-messages/{channelId}/{messageId} is Message {
-    /* - Create: any channel member can create a message
-       - Update: only message creator can update the channel 
-       - Delete: only message creator can delete the channel */
+    /* - Create: only owner and editor roles can create a message
+       - Update: only message creator can update the message
+       - Delete: only message creator can delete the message */
     create() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid) && 
-        !isChannelRoleReader(channelId, auth.uid)}
+        (isChannelRoleOwner(channelId, auth.uid) || isChannelRoleEditor(channelId, auth.uid))}
     update() { 
         isLoggedIn() && isCreatorOf(this)}
     delete() { 
@@ -76,6 +82,26 @@ path /invites/{inviteId} is Invite {
 path /member-channels/{userId} {
     read() { isCurrentUser(userId) }
 }
+path /message-comments/{channelId} {
+    read() { 
+        isLoggedIn() && isChannelMember(channelId, auth.uid)}
+}
+path /message-comments/{channelId}/{messageId}/{commentId} is Message {
+    /* - Create: must be channel member, any role can create a comment
+       - Update: only comment creator can update the comment
+       - Delete: only comment creator and channel owner can delete the comment */
+    create() { 
+        isLoggedIn() && isChannelMember(channelId, auth.uid)}
+    update() { 
+        isLoggedIn() && isCreatorOf(this)}
+    delete() { 
+        isLoggedIn() && 
+        (isCreatorOf(this) || isChannelOwner(channelId, auth.uid))}    
+}
+path /message-comments/{channelId}/{messageId}/{commentId}/reactions is Reactions {
+    write() {
+        isLoggedIn() && isChannelMember(channelId, auth.uid)}
+}
 path /tasks/create-user/{taskId} is CreateUserTask {
     create() { 
         isLoggedIn() && this.created_by == auth.uid && 
@@ -84,14 +110,6 @@ path /tasks/create-user/{taskId} is CreateUserTask {
         isLoggedIn() && isCreatorOf(this)}
     delete() { 
         isLoggedIn() && isCreatorOf(this)}    
-}
-path /typing/{channelId} {
-    read() { 
-        isLoggedIn() && isChannelMember(channelId, auth.uid)}
-}
-path /typing/{channelId}/{userId} is UserName {
-    write() { 
-        isCurrentUser(userId) && isChannelMember(channelId, auth.uid)}
 }
 path /unreads/{userId} {
     read() { isCurrentUser(userId) }
@@ -105,7 +123,7 @@ path /unreads/{userId}/{channelId} {
 path /unreads/{userId}/{channelId}/{messageId} is Boolean {
     delete() { isCurrentUser(userId) }
 }
-path /usernames/{username} is AnyKey {
+path /usernames/{username} is UserKey {
     read() { isLoggedIn() }
 }
 path /users/{userId} is User {
@@ -139,8 +157,8 @@ type Timestamp extends Number {
 type TimestampInverted extends Number {
     validate() { this >= -(now + 3600000) } // add one hour as buffer
 }
-type AnyKey extends String {
-    validate() { this.length == 28 || this.length == 12 }    
+type UserKey extends String {
+    validate() { this.length == 28 || this.length == 12 }
 }
 type AutoKey extends String {
     validate() { this.length == 20 }
@@ -227,7 +245,7 @@ type InviteType extends String {
 type Coordinate extends Map<String, Number> {
     validate() { this["lat"] != null && this["lng"] != null }
 }
-type Reactions extends Map<ReactionType, Map<AnyKey, Boolean>> {
+type Reactions extends Map<ReactionType, Map<UserKey, Boolean>> {
     // Convenience type
 }
 type Error {
@@ -263,12 +281,12 @@ type Counters {
 type Channel {
     code: CodeString,
     created_at: Timestamp,
-    created_by: AnyKey,
+    created_by: UserKey,
     general: Boolean,
     modified_at: Timestamp|Null,
-    modified_by: AnyKey|Null,
+    modified_by: UserKey|Null,
     name: ChannelName|Null,
-    owned_by: AnyKey,
+    owned_by: UserKey,
     photo: Photo|Null,
     purpose: DescriptionString|Null,
     title: TitleString,
@@ -276,10 +294,10 @@ type Channel {
 type ChannelMember {
     activity_at: Timestamp,
     activity_at_desc: TimestampInverted,
-    activity_by: AnyKey,
+    activity_by: UserKey,
     code: CodeString,
     created_at: Timestamp,
-    created_by: AnyKey,
+    created_by: UserKey,
     notifications: Notifications,
     role: ChannelRole,          
     starred: Boolean,
@@ -287,10 +305,11 @@ type ChannelMember {
 type Invite {
     channel: InviteChannel|Null,
     created_at: Timestamp,
-    created_by: AnyKey,
+    created_by: UserKey,
     email: EmailString,
     inviter: Inviter,
     link: UrlString,
+    message: DescriptionString|Null,
     role: ChannelRole
 }
 type InviteChannel {
@@ -299,19 +318,21 @@ type InviteChannel {
 }
 type Inviter {
     email: EmailString,
-    id: AnyKey,
+    id: UserKey,
     title: TitleString,
     username: UserName
 }
 type Message {
     attachments: Map<PatchrKey, Attachment>|Null,
     channel_id: PatchrKey,
+    comment_count: Number|Null,
     created_at: Timestamp,
     created_at_desc: TimestampInverted,
-    created_by: AnyKey,
-    message_id: AnyKey|Null,
+    created_by: UserKey,
+    message_id: AutoKey|Null,    // Useful when this is a comment message
     modified_at: Timestamp,
-    modified_by: AnyKey,
+    modified_by: UserKey,
+    moving: Boolean|Null,
     reactions: Reactions|Null,
     text: BodyString|Null
 }
@@ -320,7 +341,7 @@ type User {
         root["usernames"][this.username] == key() }
     presence: Boolean|Number|Null,
     created_at: Timestamp,
-    created_by: AnyKey,
+    created_by: UserKey,
     modified_at: Timestamp,
     username: UserName,
     developer: Boolean|Null,
@@ -331,14 +352,14 @@ type User {
 // ----------------------------------------------------------------------------
 type Task {
     created_at: Timestamp,
-    created_by: AnyKey,
+    created_by: UserKey,
     response: Response|Null,
 }
 type CreateUserTask extends Task {
     request: CreateUserRequest
 }
 type CreateUserRequest {
-    user_id: AnyKey,
+    user_id: UserKey,
     username: UserName,
 }
 type Response {
@@ -403,12 +424,6 @@ function initial(value, init) {
 // ----------------------------------------------------------------------------
 // Indexes: These get combined with read/write/validate for same path
 // ----------------------------------------------------------------------------
-path /users {
-    index() {["email"]}
-}
-path /channels {
-    index() {["name"]}
-}
 path /member-channels/{userId} {
-    index() {["index_priority_joined_at_desc"]}
+    index() {["activity_date_desc", "created_at", "starred", "role"]}
 }

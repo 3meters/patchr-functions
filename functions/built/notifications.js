@@ -26,7 +26,9 @@ function sendMessages(installs, message, payloadData) {
             priority: 'high',
         };
         for (const install of installs) {
-            payload.notification.badge = '' + install.unreads;
+            if (install.unreads) {
+                payload.notification.badge = '' + install.unreads; // force to string
+            }
             const token = install.id;
             const userId = install.userId;
             const response = yield shared.messaging.sendToDevice(token, payload, options);

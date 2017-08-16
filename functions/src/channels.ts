@@ -23,12 +23,11 @@ async function created(current: DeltaSnapshot) {
 
   const userId: string = current.val().created_by
   const timestamp = Date.now()
-  const code = utils.generateRandomId(12)
   const slug = shared.slugify(current.val().title)
+  const code = current.val().code
   const membership = shared.channelMemberMap(userId, timestamp, 'owner', code)
   const updates = {}
   updates[`channels/${channelId}/name`] = slug
-  updates[`channels/${channelId}/code`] = code
   updates[`channel-members/${channelId}/${userId}/`] = membership
 
   /* Submit updates */
