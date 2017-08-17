@@ -88,16 +88,9 @@ path /message-comments/{channelId} {
 }
 path /message-comments/{channelId}/{messageId}/{commentId} is Message {
     /* - Create: must be channel member, any role can create a comment
-       - Update: only comment creator can update the comment
-       - Delete: only comment creator and channel owner can delete the comment */
+       - Update and delete not allowed */
     create() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
-    /*
-    update() { 
-        isLoggedIn() && isCreatorOf(this)}
-    delete() { 
-        isLoggedIn() && 
-        (isCreatorOf(this) || isChannelOwner(channelId, auth.uid))}*/
 }
 path /message-comments/{channelId}/{messageId}/{commentId}/reactions is Reactions {
     write() {
