@@ -92,11 +92,12 @@ path /message-comments/{channelId}/{messageId}/{commentId} is Message {
        - Delete: only comment creator and channel owner can delete the comment */
     create() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
+    /*
     update() { 
         isLoggedIn() && isCreatorOf(this)}
     delete() { 
         isLoggedIn() && 
-        (isCreatorOf(this) || isChannelOwner(channelId, auth.uid))}    
+        (isCreatorOf(this) || isChannelOwner(channelId, auth.uid))}*/
 }
 path /message-comments/{channelId}/{messageId}/{commentId}/reactions is Reactions {
     write() {

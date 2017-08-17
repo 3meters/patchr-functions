@@ -55,7 +55,7 @@ function created(current) {
             });
             yield shared.database.ref().update(updates);
         }
-        /* Gather list of channel members to notify */
+        /* For channel members except muted or author: notify, flag unread, tickle activity */
         const notifyIds = yield shared.getMembersToNotify(channelId, [message.created_by]);
         if (notifyIds.length === 0) {
             return;
@@ -84,12 +84,10 @@ function created(current) {
             const updates = {};
             for (const notifyId of notifyIds) {
                 updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true;
+                /* Trigger will mirror these updates to 'member-channels' */
                 updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at;
                 updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc;
                 updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by;
-                updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at;
-                updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc;
-                updates[`member-channels/${notifyId}/${channelId}/activity_by`] = message.created_by;
                 promises.push(notify(notifyId, installs));
             }
             yield shared.database.ref().update(updates);
@@ -146,8 +144,6 @@ function deleted(previous) {
             memberIds.forEach((memberId) => {
                 updates[`unreads/${memberId}/${channelId}/${messageId}`] = null;
             });
-            updates[`message-comments/${channelId}/${messageId}`] = null;
-            yield shared.database.ref().update(updates);
         }
         /* Clear comments */
         const updates = {};

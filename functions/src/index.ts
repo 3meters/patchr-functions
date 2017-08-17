@@ -25,11 +25,6 @@ export let onCreateComment = functions
   .ref('/message-comments/{channelId}/{messageId}/{commentId}')
   .onCreate(async (event) => await comments.onWriteComment(event))
 
-export let onDeleteComment = functions
-  .database
-  .ref('/message-comments/{channelId}/{messageId}/{commentId}')
-  .onDelete(async (event) => await comments.onWriteComment(event))
-
 export let onCreateUnread = functions
   .database
   .ref('/unreads/{userId}/{channelId}/{messageId}')

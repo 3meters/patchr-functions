@@ -30,10 +30,6 @@ exports.onCreateComment = functions
     .database
     .ref('/message-comments/{channelId}/{messageId}/{commentId}')
     .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
-exports.onDeleteComment = functions
-    .database
-    .ref('/message-comments/{channelId}/{messageId}/{commentId}')
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
 exports.onCreateUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}')

@@ -137,8 +137,6 @@ async function deleted(previous: DeltaSnapshot) {
     memberIds.forEach((memberId) => {
       updates[`unreads/${memberId}/${channelId}/${messageId}`] = null
     })
-    updates[`message-comments/${channelId}/${messageId}`] = null
-    await shared.database.ref().update(updates)
   }
 
   /* Clear comments */
