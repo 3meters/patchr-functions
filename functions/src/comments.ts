@@ -17,6 +17,7 @@ async function created(current: shared.DeltaSnapshot) {
   const commentId: string = current.key
   const channelId: string = current.val().channel_id
   const messageId: string = current.val().message_id
+  const createdBy: string = current.val().created_by
   console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId}`)
 
   /* Increment comment counter on message */
@@ -28,4 +29,11 @@ async function created(current: shared.DeltaSnapshot) {
   } catch (err) {
     console.error(`Error changing comment count: ${err.message}`)
   }
+
+  /* Mark message as unread for message creator */
+  const messageCreatedBy: string = (await shared.getMessage(channelId, messageId)).val().created_by
+  if (messageCreatedBy === createdBy) { return } // Don't notify if self commenting.
+  const updates = {}
+  updates[`unreads/${messageCreatedBy}/${channelId}/${messageId}`] = commentId
+  await shared.database.ref().update(updates)
 }

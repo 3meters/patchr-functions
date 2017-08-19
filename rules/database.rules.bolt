@@ -114,7 +114,7 @@ path /unreads/{userId}/{channelId} {
         isCurrentUser(userId) || 
         isChannelOwner(channelId, auth.uid)}
 }
-path /unreads/{userId}/{channelId}/{messageId} is Boolean {
+path /unreads/{userId}/{channelId}/{messageId} is Boolean|AutoKey {
     delete() { isCurrentUser(userId) }
 }
 path /usernames/{username} is UserKey {

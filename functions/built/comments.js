@@ -23,6 +23,7 @@ function created(current) {
         const commentId = current.key;
         const channelId = current.val().channel_id;
         const messageId = current.val().message_id;
+        const createdBy = current.val().created_by;
         console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId}`);
         /* Increment comment counter on message */
         try {
@@ -34,6 +35,14 @@ function created(current) {
         catch (err) {
             console.error(`Error changing comment count: ${err.message}`);
         }
+        /* Mark message as unread for message creator */
+        const messageCreatedBy = (yield shared.getMessage(channelId, messageId)).val().created_by;
+        if (messageCreatedBy === createdBy) {
+            return;
+        } // Don't notify if self commenting.
+        const updates = {};
+        updates[`unreads/${messageCreatedBy}/${channelId}/${messageId}`] = commentId;
+        yield shared.database.ref().update(updates);
     });
 }
 //# sourceMappingURL=comments.js.map

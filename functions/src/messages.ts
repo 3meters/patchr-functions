@@ -129,19 +129,21 @@ async function deleted(previous: DeltaSnapshot) {
   const messageId: string = previous.key
   const photo: any = shared.getPhotoFromMessage(previous.val())
   console.log(`Message deleted: ${messageId} for: ${channelId}`)
-  
+
+  const updates = {}
+
   /* Clear unread flag for each member */
   const memberIds: string[] = await shared.getMemberIds(channelId)
   if (memberIds.length > 0) { 
-    const updates = {}
     memberIds.forEach((memberId) => {
       updates[`unreads/${memberId}/${channelId}/${messageId}`] = null
     })
   }
 
   /* Clear comments */
-  const updates = {}
   updates[`message-comments/${channelId}/${messageId}`] = null
+
+  /* Commit updates */
   await shared.database.ref().update(updates)
 
   /* Delete image file if needed */
