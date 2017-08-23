@@ -42,7 +42,8 @@ path /channel-members/{channelId}/{userId} is ChannelMember {
         isCreatorOf(this) && this.role == prior(this.role)}
     delete() { 
         isLoggedIn() && (isCreatorOf(this) || isChannelOwner(channelId, auth.uid)) && 
-        prior(root)["channels"][channelId].owned_by != userId}
+        (root["channels"][channelId] == null ||
+            prior(root)["channels"][channelId].owned_by != userId)}
 }
 path /channel-members/{channelId}/{userId}/role is ChannelRole {
     write() {
@@ -82,6 +83,14 @@ path /invites/{inviteId} is Invite {
 path /member-channels/{userId} {
     read() { isCurrentUser(userId) }
 }
+path /member-channels/{userId}/{channelId} is ChannelMember {
+    create() { 
+        isLoggedIn() && channelExists(channelId) && isChannelCode(channelId, this.code)}
+    delete() { 
+        isLoggedIn() && (isCreatorOf(this) || isChannelOwner(channelId, auth.uid)) && 
+        (root["channels"][channelId] == null ||
+            prior(root)["channels"][channelId].owned_by != userId)}
+    }
 path /message-comments/{channelId} {
     read() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
