@@ -56,6 +56,24 @@ function getMemberChannelIds(userId) {
     });
 }
 exports.getMemberChannelIds = getMemberChannelIds;
+function getOwnedChannelIds(userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const channels = yield exports.database
+            .ref('channels')
+            .orderByChild('owned_by')
+            .equalTo(userId)
+            .once('value');
+        const values = [];
+        channels.forEach((channel) => {
+            if (channel.key) {
+                values.push(channel.key);
+            }
+            return false;
+        });
+        return values;
+    });
+}
+exports.getOwnedChannelIds = getOwnedChannelIds;
 function getMembersToNotify(channelId, exclude) {
     return __awaiter(this, void 0, void 0, function* () {
         const members = yield exports.database
@@ -123,7 +141,7 @@ function getAction(event) {
 exports.getAction = getAction;
 function deleteImageFile(filename) {
     return __awaiter(this, void 0, void 0, function* () {
-        const bucket = gcs.bucket('patchr-images-dev');
+        const bucket = gcs.bucket('patchr-images');
         const file = bucket.file(filename);
         const data = yield file.delete();
     });

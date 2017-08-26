@@ -430,3 +430,6 @@ function initial(value, init) {
 path /member-channels/{userId} {
     index() {["activity_date_desc", "created_at", "starred", "role"]}
 }
+path /channels {
+    index() {["owned_by"]}
+}

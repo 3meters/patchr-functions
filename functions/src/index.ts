@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions'
+import * as accounts from './accounts'
 import * as channel_members from './channel-members'
 import * as channels from './channels'
 import * as comments from './comments'
@@ -68,6 +69,13 @@ export let onDeleteUnreadsCounter = functions
   .database
   .ref('/counters/{userId}/unreads')
   .onDelete(async (event) => await unreads.onWriteUnreadsCounter(event))
+
+/* Auth accounts */
+
+export let onDeleteAccount = functions
+  .auth
+  .user()
+  .onDelete(async (event) => await accounts.onDeleteAccount(event))
 
 /* Tasks */
 

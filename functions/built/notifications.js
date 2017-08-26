@@ -8,9 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/*
- * Common database functions
- */
 const shared = require("./shared");
 function sendMessages(installs, message, payloadData) {
     return __awaiter(this, void 0, void 0, function* () {

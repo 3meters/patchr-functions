@@ -49,6 +49,20 @@ export async function getMemberChannelIds(userId: string) {
   return values
 }
 
+export async function getOwnedChannelIds(userId: string) {
+  const channels: DataSnapshot = await database
+    .ref('channels')
+    .orderByChild('owned_by')
+    .equalTo(userId)
+    .once('value')
+  const values: string[] = []
+  channels.forEach((channel) => {
+    if (channel.key) { values.push(channel.key) }
+    return false
+  })
+  return values
+}
+
 export async function getMembersToNotify(channelId: string, exclude: string[]) {
   const members: DataSnapshot = await database
     .ref(`channel-members/${channelId}`)
@@ -105,7 +119,7 @@ export function getAction(event: DatabaseEvent): Action {
 }
 
 export async function deleteImageFile(filename: string) {
-  const bucket = gcs.bucket('patchr-images-dev')
+  const bucket = gcs.bucket('patchr-images')
   const file = bucket.file(filename)
   const data = await file.delete()
 }

@@ -1,6 +1,7 @@
 /*
  * Common database functions
  */
+import * as admin from 'firebase-admin'
 import * as shared from './shared'
 
 type Response = admin.messaging.MessagingDevicesResponse

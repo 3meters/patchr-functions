@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
+const accounts = require("./accounts");
 const channel_members = require("./channel-members");
 const channels = require("./channels");
 const comments = require("./comments");
@@ -64,6 +65,11 @@ exports.onDeleteUnreadsCounter = functions
     .database
     .ref('/counters/{userId}/unreads')
     .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnreadsCounter(event); }));
+/* Auth accounts */
+exports.onDeleteAccount = functions
+    .auth
+    .user()
+    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield accounts.onDeleteAccount(event); }));
 /* Tasks */
 exports.createUser = functions
     .database

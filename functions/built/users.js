@@ -48,19 +48,20 @@ exports.onWriteUsername = onWriteUsername;
 function createUser(task) {
     return __awaiter(this, void 0, void 0, function* () {
         const req = task.request;
+        const timestamp = Date.now();
+        const username = req.username;
         const user = {
-            created_at: admin.database.ServerValue.TIMESTAMP,
+            created_at: timestamp,
             created_by: task.created_by,
-            modified_at: admin.database.ServerValue.TIMESTAMP,
-            username: req.username,
+            modified_at: timestamp,
+            username: username,
         };
         const userId = req.user_id;
-        const timestamp = Date.now();
         const updates = {};
         /* Add default general channel, channel trigger adds creator as member */
         const generalId = `ch-${utils.generateRandomId(9)}`;
         const generalCode = utils.generateRandomId(12);
-        const generalTitle = `${req.username} channel`;
+        const generalTitle = `${username} channel`;
         const general = {
             code: generalCode,
             created_at: timestamp,
@@ -116,8 +117,9 @@ function deletedProfile(userId, previous) {
 function createdUsername(userId, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const updates = {};
-        console.log(`Claiming username: ${current.val()}`);
-        updates[`usernames/${current.val()}`] = null;
+        const username = current.val();
+        console.log(`Claiming username: ${username}`);
+        updates[`usernames/${username}`] = userId;
         yield shared.database.ref().update(updates);
     });
 }
