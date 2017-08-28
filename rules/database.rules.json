@@ -428,48 +428,6 @@
         }
       }
     },
-    "tasks": {
-      "create-user": {
-        "$taskId": {
-          ".validate": "newData.hasChildren(['created_at', 'created_by', 'request'])",
-          "created_at": {
-            ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
-          },
-          "created_by": {
-            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-          },
-          "response": {
-            ".validate": "newData.hasChildren()",
-            "error": {
-              ".validate": "newData.isString()"
-            },
-            "result": {
-              ".validate": "true"
-            },
-            "$other": {
-              ".validate": "false"
-            }
-          },
-          "$other": {
-            ".validate": "false"
-          },
-          "request": {
-            ".validate": "newData.hasChildren(['user_id', 'username'])",
-            "user_id": {
-              ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
-            },
-            "username": {
-              ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 21 && newData.val() == newData.val().toLowerCase()"
-            },
-            "$other": {
-              ".validate": "false"
-            }
-          },
-          ".write": "data.val() == null && auth != null && newData.child('created_by').val() == auth.uid && (newData.child('request').child('user_id').val() == auth.uid || newData.child('user_id').val() == auth.uid) || data.val() != null && newData.val() == null && auth != null && data.child('created_by').val() == auth.uid",
-          ".read": "auth != null && data.child('created_by').val() == auth.uid"
-        }
-      }
-    },
     "unreads": {
       "$userId": {
         ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId)",
@@ -564,6 +522,7 @@
         "$other": {
           ".validate": "false"
         },
+        ".write": "data.val() == null && (auth != null && auth.uid == $userId)",
         ".read": "auth != null"
       }
     }

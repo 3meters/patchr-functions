@@ -31,27 +31,18 @@ function fixupChannels() {
     return __awaiter(this, void 0, void 0, function* () {
         const channels = (yield admin.database().ref('channels').once('value')).val();
         _.forOwn(channels, (channel, channelId) => __awaiter(this, void 0, void 0, function* () {
-            // if (channel.general) {
-            //   const user = (await getUser(channel.owned_by)).val()
-            //   const title = `${user.username} channel`
-            //   const name = `${user.username}-channel`
-            //   console.log(`general: old: ${channel.name} new: ${name} id: ${channelId}`)
-            //   const updates = {}
-            //   updates[`channels/${channelId}/title`] = title      
-            //   await admin.database().ref().update(updates)
-            // } 
-            // else if (channel.name === 'chatter') {
-            //   console.log(`chatter: ${channel.name} id: ${channelId}`)
-            //   await admin.database().ref(`channels/${channelId}`).remove()
-            // } 
-            // else {
-            //   console.log(`custom: ${channel.name} id: ${channelId}`)
-            // }
             if (channel.general) {
-                console.log(`general: ${channel.name} id: ${channelId}`);
+                const user = (yield getUser(channel.owned_by)).val();
+                const title = `${user.username} channel`;
+                const name = `${user.username}-channel`;
+                console.log(`general: old: ${channel.name} new: ${name} id: ${channelId}`);
+                const updates = {};
+                updates[`channels/${channelId}/title`] = title;
+                yield admin.database().ref().update(updates);
             }
             else if (channel.name === 'chatter') {
                 console.log(`chatter: ${channel.name} id: ${channelId}`);
+                yield admin.database().ref(`channels/${channelId}`).remove();
             }
             else {
                 console.log(`custom: ${channel.name} id: ${channelId}`);

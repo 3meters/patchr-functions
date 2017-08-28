@@ -76,17 +76,3 @@ export let onDeleteAccount = functions
   .auth
   .user()
   .onDelete(async (event) => await accounts.onDeleteAccount(event))
-
-/* Tasks */
-
-export let createUser = functions
-  .database
-  .ref('/tasks/create-user/{taskId}')
-  .onCreate(async (event) => await users.createUser(translate(event)))
-
-function translate(event: shared.DatabaseEvent) {
-  const task = event.data.val()
-  task.adminRef = event.data.adminRef
-  task.action = shared.getAction(event)
-  return task
-}

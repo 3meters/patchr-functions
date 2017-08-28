@@ -15,7 +15,6 @@ const channels = require("./channels");
 const comments = require("./comments");
 const invites = require("./invites");
 const messages = require("./messages");
-const shared = require("./shared");
 const unreads = require("./unreads");
 const users = require("./users");
 // /* Exports */
@@ -70,15 +69,4 @@ exports.onDeleteAccount = functions
     .auth
     .user()
     .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield accounts.onDeleteAccount(event); }));
-/* Tasks */
-exports.createUser = functions
-    .database
-    .ref('/tasks/create-user/{taskId}')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield users.createUser(translate(event)); }));
-function translate(event) {
-    const task = event.data.val();
-    task.adminRef = event.data.adminRef;
-    task.action = shared.getAction(event);
-    return task;
-}
 //# sourceMappingURL=index.js.map

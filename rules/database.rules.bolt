@@ -90,7 +90,7 @@ path /member-channels/{userId}/{channelId} is ChannelMember {
         isLoggedIn() && (isCreatorOf(this) || isChannelOwner(channelId, auth.uid)) && 
         (root["channels"][channelId] == null ||
             prior(root)["channels"][channelId].owned_by != userId)}
-    }
+}
 path /message-comments/{channelId} {
     read() { 
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
@@ -104,15 +104,6 @@ path /message-comments/{channelId}/{messageId}/{commentId} is Message {
 path /message-comments/{channelId}/{messageId}/{commentId}/reactions is Reactions {
     write() {
         isLoggedIn() && isChannelMember(channelId, auth.uid)}
-}
-path /tasks/create-user/{taskId} is CreateUserTask {
-    create() { 
-        isLoggedIn() && this.created_by == auth.uid && 
-        (this.request.user_id == auth.uid || this.user_id == auth.uid)}
-    read() {
-        isLoggedIn() && isCreatorOf(this)}
-    delete() { 
-        isLoggedIn() && isCreatorOf(this)}    
 }
 path /unreads/{userId} {
     read() { isCurrentUser(userId) }
@@ -130,7 +121,8 @@ path /usernames/{username} is UserKey {
     read() { isLoggedIn() }
 }
 path /users/{userId} is User {
-    /* Any user can read, only worker can write */
+    /* Any user can read, only current user can create a user for themselves */
+    create() { isCurrentUser(userId)}
     read() { isLoggedIn()}
 }
 path /users/{userId}/profile is Profile {
@@ -349,25 +341,6 @@ type User {
     username: UserName,
     developer: Boolean|Null,
     profile: Profile|Null
-}
-// ----------------------------------------------------------------------------
-// Tasks
-// ----------------------------------------------------------------------------
-type Task {
-    created_at: Timestamp,
-    created_by: UserKey,
-    response: Response|Null,
-}
-type CreateUserTask extends Task {
-    request: CreateUserRequest
-}
-type CreateUserRequest {
-    user_id: UserKey,
-    username: UserName,
-}
-type Response {
-    error: String|Null,
-    result: Any|Null,
 }
 // ----------------------------------------------------------------------------
 // Functions

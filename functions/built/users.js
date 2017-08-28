@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * User processing
  */
 const shared = require("./shared");
-const utils = require("./utils");
 const Action = shared.Action;
 function onWriteProfile(event) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -45,49 +44,6 @@ function onWriteUsername(event) {
     });
 }
 exports.onWriteUsername = onWriteUsername;
-function createUser(task) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const req = task.request;
-        const timestamp = Date.now();
-        const username = req.username;
-        const user = {
-            created_at: timestamp,
-            created_by: task.created_by,
-            modified_at: timestamp,
-            username: username,
-        };
-        const userId = req.user_id;
-        const updates = {};
-        /* Add default general channel, channel trigger adds creator as member */
-        const generalId = `ch-${utils.generateRandomId(9)}`;
-        const generalCode = utils.generateRandomId(12);
-        const generalTitle = `${username} channel`;
-        const general = {
-            code: generalCode,
-            created_at: timestamp,
-            created_by: userId,
-            general: true,
-            owned_by: userId,
-            title: generalTitle,
-        };
-        updates[`channels/${generalId}`] = general;
-        console.log(`Creating user: ${req.user_id}`);
-        try {
-            yield shared.database.ref(`users/${req.user_id}`).set(user); // Validation will catch duplicate username
-            yield shared.database.ref().update(updates);
-            if (task.adminRef) {
-                yield task.adminRef.child('response').set({ result: 'ok' });
-            }
-        }
-        catch (err) {
-            console.error(`Error creating user: ${err}`);
-            if (task.adminRef) {
-                yield task.adminRef.child('response').set({ error: `Error creating user: ${err.message}` });
-            }
-        }
-    });
-}
-exports.createUser = createUser;
 /* Profile */
 function updatedProfile(userId, previous, current) {
     return __awaiter(this, void 0, void 0, function* () {

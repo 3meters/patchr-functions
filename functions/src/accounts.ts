@@ -9,10 +9,11 @@ export async function onDeleteAccount(event: shared.AuthEvent) {
   const userId = user.uid
   const username: string = (await shared.getUser(userId)).val().username
   const ownedChannelIds: string[] = await shared.getOwnedChannelIds(userId)
-  
   const updates = {}
-  console.log(`Releasing username: ${username}`)
-  updates[`usernames/${username}`] = null
+  if (username) {
+    console.log(`Releasing username: ${username}`)
+    updates[`usernames/${username}`] = null  
+  }
 
   if (ownedChannelIds.length > 0) { 
     ownedChannelIds.forEach((channelId) => {

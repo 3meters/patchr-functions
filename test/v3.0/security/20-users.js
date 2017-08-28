@@ -25,8 +25,9 @@ describe('Users', function() {
       username: "cheeta"
     }
 
-    it('only worker can create users', function() {
-      expect(users.cheeta).cannot.write(userBase).to.path("users/us-cheetaxxx")
+    it('only current user can create user for themselves', function() {
+      expect(users.cheeta).cannot.write(userBase).to.path("users/us-janexxxxx")
+      expect(users.cheeta).can.write(userBase).to.path("users/us-cheetaxxx")
       expect(users.worker).can.write(userBase).to.path("users/us-cheetaxxx")
     })
 

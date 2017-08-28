@@ -19,8 +19,10 @@ function onDeleteAccount(event) {
         const username = (yield shared.getUser(userId)).val().username;
         const ownedChannelIds = yield shared.getOwnedChannelIds(userId);
         const updates = {};
-        console.log(`Releasing username: ${username}`);
-        updates[`usernames/${username}`] = null;
+        if (username) {
+            console.log(`Releasing username: ${username}`);
+            updates[`usernames/${username}`] = null;
+        }
         if (ownedChannelIds.length > 0) {
             ownedChannelIds.forEach((channelId) => {
                 updates[`channels/${channelId}`] = null;
