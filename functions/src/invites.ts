@@ -17,12 +17,12 @@ export async function onWriteInvite(event: shared.DatabaseEvent) {
 
 async function created(current: shared.DeltaSnapshot) {
   const invite = current.val()
-  console.log(`Invite created: ${current.key}`)
-
+  console.log(`Invite created: ${current.key} by: ${invite.inviter.id} for: ${invite.email}`)
   try {
     invite.id = current.key
     await sendInviteEmail(invite)
-  } catch (err) {
+  } 
+  catch (err) {
     console.error(`Error sending invite email: ${err}`)
   }
 }
@@ -69,8 +69,8 @@ async function sendInviteEmail(invite: any) {
       console.error(`SendGrid: too many requests: ${statusCode}`)
       throw new Error(`SendGrid: too many requests: ${statusCode}`)
     } else if (statusCode >= 400 && statusCode <= 499) {
-      console.error(`SendGrid: error with the request: ${statusCode}`)
-      throw new Error(`SendGrid: error with the request: ${statusCode}`)
+      console.error(`SendGrid: error with the request: code: ${statusCode} request: ${request}`)
+      throw new Error(`SendGrid: error with the request: code: ${statusCode} request: ${request}`)
     } else if (statusCode >= 500) {
       console.error(`SendGrid: error in SendGrid system: ${statusCode}`)
       throw new Error(`SendGrid: error in SendGrid system: ${statusCode}`)

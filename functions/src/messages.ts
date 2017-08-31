@@ -20,90 +20,76 @@ export async function onWriteMessage(event: shared.DatabaseEvent) {
 async function created(current: shared.DeltaSnapshot) {
 
   const message = current.val()
+  const messageRef = current.val().adminRef
   const messageId: string = current.key
   const channelId: string = message.channel_id
-
-  if (current.val().moving) {
-    console.log(`Message moved: ${messageId} to: ${channelId}`)
+  const createdBy: string = message.created_by
+  
+  if (message.moving) {
+    console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`)
     const updates = { moving: null }
-    await current.adminRef.update(updates)
+    await messageRef.adminRef.update(updates)
     return 
   }
 
-  const createdBy: string = message.created_by
-  console.log(`Message created: ${messageId} for: ${channelId}`)
-
-  /* Members that need activity tickle */
-  const memberIds: string[] = await shared.getMemberIds(channelId)
-  if (memberIds.length > 0) { 
-    const updates = {}
-    memberIds.forEach((memberId) => {
-      updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at
-      updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc
-      updates[`channel-members/${channelId}/${memberId}/activity_by`] = message.created_by
-      updates[`member-channels/${memberId}/${channelId}/activity_at`] = message.created_at
-      updates[`member-channels/${memberId}/${channelId}/activity_at_desc`] = message.created_at_desc
-      updates[`member-channels/${memberId}/${channelId}/activity_by`] = message.created_by
-    })
-    await shared.database.ref().update(updates)
-  }
-
-  /* For channel members except muted or author: notify, flag unread, tickle activity */
-  const notifyIds: string[] = await shared.getMembersToNotify(channelId, [message.created_by])
+  console.log(`Message created: ${messageId} for: ${channelId} by: ${createdBy}`)
+  
+  /* Gather channel members except muted or author */
+  const notifyIds: string[] = await shared.getMembersToNotify(channelId, [createdBy])
   if (notifyIds.length === 0) { return }
 
-  console.log('Channel members to notify: ' + notifyIds.length)
-
-  const username: string = (await shared.getUser(createdBy)).val().username
-  const channelName: string = (await shared.getChannel(channelId)).val().name
-  const data = {
-    user_id: createdBy,
-    channel_id: channelId,
-    message_id: messageId,
-  }
-  let notificationText: string = ''
-  if (message.photo) {
-    notificationText = `#${channelName} @${username}: @${username} posted a photo`
-    if (message.text) {
-      notificationText += ` and commented: ${message.text}`
-    }
-  } else if (message.text) {
-    notificationText = `#${channelName} @${username}: ${message.text}`
-  }
-
+  /* Flag unread, tickle activity */
   try {
-    const installs: any[] = []
-    const promises: any[] = []
     const updates = {}
-    for (const notifyId of notifyIds) {
-      updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true
+    notifyIds.forEach((memberId) => {
+      updates[`unreads/${memberId}/${channelId}/${messageId}`] = true
       /* Trigger will mirror these updates to 'member-channels' */
-      updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at
-      updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc
-      updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by
-      promises.push(notify(notifyId, installs))
-    }
+      updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at
+      updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc
+      updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy
+    })
+    console.log('Channel members to notify: ' + notifyIds.length)
     await shared.database.ref().update(updates)
-    await Promise.all(promises)
-
-    if (installs.length > 0) {
-      await notifications.sendMessages(installs, notificationText, data)
-    }
   } 
   catch (err) {
     console.error('Error updating unreads and sort priority: ', err)
     return
   }
 
-  async function notify(memberId: string, installs: any[]) {
-    const unreads: number = ((await shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1
-    const snaps: shared.DataSnapshot = await shared.database.ref(`installs/${memberId}`).once('value')
-    snaps.forEach((install) => {
-      if (install.key) {
-        installs.push({ id: install.key, userId: memberId, unreads: unreads })         
+  /* Notify */
+  try {
+    /* Gather installs */
+    const installs: any[] = []
+    const promises: any[] = []
+    for (const notifyId of notifyIds) {
+      promises.push(notifications.gatherInstalls(notifyId, installs))
+    }
+    await Promise.all(promises)
+
+    if (installs.length === 0) { return }
+
+    const username: string = (await shared.getUser(createdBy)).val().username
+    const channelName: string = (await shared.getChannel(channelId)).val().name
+    const data = {
+      user_id: createdBy,
+      channel_id: channelId,
+      message_id: messageId,
+    }
+    let notificationText: string = ''
+    if (message.photo) {
+      notificationText = `#${channelName} @${username}: @${username} posted a photo`
+      if (message.text) {
+        notificationText += ` and commented: ${message.text}`
       }
-      return false
-    })
+    } 
+    else if (message.text) {
+      notificationText = `#${channelName} @${username}: ${message.text}`
+    }
+    await notifications.sendMessages(installs, notificationText, data)
+  } 
+  catch (err) {
+    console.error('Error processing new message notifications: ', err)
+    return
   }
 }
 
@@ -112,7 +98,6 @@ async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
   const channelId: string = current.val().channel_id
   const previousPhoto: any = shared.getPhotoFromMessage(previous.val())
   const currentPhoto: any = shared.getPhotoFromMessage(current.val())
-  console.log(`Message updated: ${messageId} for: ${channelId}`)
 
   if (previousPhoto) {
     if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {

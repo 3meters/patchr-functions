@@ -42,3 +42,14 @@ export async function sendMessages(installs: any[], message: string, payloadData
     Promise.all(tokensToRemove)
   }
 }
+
+export async function gatherInstalls(memberId: string, installs: any[]) {
+  const unreads: number = ((await shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1
+  const snaps: shared.DataSnapshot = await shared.database.ref(`installs/${memberId}`).once('value')
+  snaps.forEach((install) => {
+    if (install.key) {
+      installs.push({ id: install.key, userId: memberId, unreads: unreads })         
+    }
+    return false
+  })
+}

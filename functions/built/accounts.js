@@ -16,16 +16,25 @@ function onDeleteAccount(event) {
     return __awaiter(this, void 0, void 0, function* () {
         const user = event.data;
         const userId = user.uid;
-        const username = (yield shared.getUser(userId)).val().username;
         const ownedChannelIds = yield shared.getOwnedChannelIds(userId);
+        const memberChannelIds = yield shared.getMemberChannelIds(userId);
         const updates = {};
-        if (username) {
-            console.log(`Releasing username: ${username}`);
-            updates[`usernames/${username}`] = null;
-        }
+        /* We remove everything except content.
+          - messages: show user as deleted.
+          - reactions: show user as deleted.
+          - comments: show user as deleted. */
+        console.log(`Deleting user: ${userId}`);
+        updates[`users/${userId}`] = null; // Also trigger release of username
+        /* Delete all owned channels */
         if (ownedChannelIds.length > 0) {
             ownedChannelIds.forEach((channelId) => {
                 updates[`channels/${channelId}`] = null;
+            });
+        }
+        /* Remove all channel memberships */
+        if (memberChannelIds.length > 0) {
+            memberChannelIds.forEach((channelId) => {
+                updates[`channel-members/${channelId}/${userId}`] = null;
             });
         }
         yield shared.database.ref().update(updates);

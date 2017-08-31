@@ -31,86 +31,73 @@ exports.onWriteMessage = onWriteMessage;
 function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const message = current.val();
+        const messageRef = current.val().adminRef;
         const messageId = current.key;
         const channelId = message.channel_id;
-        if (current.val().moving) {
-            console.log(`Message moved: ${messageId} to: ${channelId}`);
+        const createdBy = message.created_by;
+        if (message.moving) {
+            console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`);
             const updates = { moving: null };
-            yield current.adminRef.update(updates);
+            yield messageRef.adminRef.update(updates);
             return;
         }
-        const createdBy = message.created_by;
-        console.log(`Message created: ${messageId} for: ${channelId}`);
-        /* Members that need activity tickle */
-        const memberIds = yield shared.getMemberIds(channelId);
-        if (memberIds.length > 0) {
-            const updates = {};
-            memberIds.forEach((memberId) => {
-                updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at;
-                updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc;
-                updates[`channel-members/${channelId}/${memberId}/activity_by`] = message.created_by;
-                updates[`member-channels/${memberId}/${channelId}/activity_at`] = message.created_at;
-                updates[`member-channels/${memberId}/${channelId}/activity_at_desc`] = message.created_at_desc;
-                updates[`member-channels/${memberId}/${channelId}/activity_by`] = message.created_by;
-            });
-            yield shared.database.ref().update(updates);
-        }
-        /* For channel members except muted or author: notify, flag unread, tickle activity */
-        const notifyIds = yield shared.getMembersToNotify(channelId, [message.created_by]);
+        console.log(`Message created: ${messageId} for: ${channelId} by: ${createdBy}`);
+        /* Gather channel members except muted or author */
+        const notifyIds = yield shared.getMembersToNotify(channelId, [createdBy]);
         if (notifyIds.length === 0) {
             return;
         }
-        console.log('Channel members to notify: ' + notifyIds.length);
-        const username = (yield shared.getUser(createdBy)).val().username;
-        const channelName = (yield shared.getChannel(channelId)).val().name;
-        const data = {
-            user_id: createdBy,
-            channel_id: channelId,
-            message_id: messageId,
-        };
-        let notificationText = '';
-        if (message.photo) {
-            notificationText = `#${channelName} @${username}: @${username} posted a photo`;
-            if (message.text) {
-                notificationText += ` and commented: ${message.text}`;
-            }
-        }
-        else if (message.text) {
-            notificationText = `#${channelName} @${username}: ${message.text}`;
-        }
+        /* Flag unread, tickle activity */
         try {
-            const installs = [];
-            const promises = [];
             const updates = {};
-            for (const notifyId of notifyIds) {
-                updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true;
+            notifyIds.forEach((memberId) => {
+                updates[`unreads/${memberId}/${channelId}/${messageId}`] = true;
                 /* Trigger will mirror these updates to 'member-channels' */
-                updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at;
-                updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc;
-                updates[`channel-members/${channelId}/${notifyId}/activity_by`] = message.created_by;
-                promises.push(notify(notifyId, installs));
-            }
+                updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at;
+                updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy;
+            });
+            console.log('Channel members to notify: ' + notifyIds.length);
             yield shared.database.ref().update(updates);
-            yield Promise.all(promises);
-            if (installs.length > 0) {
-                yield notifications.sendMessages(installs, notificationText, data);
-            }
         }
         catch (err) {
             console.error('Error updating unreads and sort priority: ', err);
             return;
         }
-        function notify(memberId, installs) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const unreads = ((yield shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1;
-                const snaps = yield shared.database.ref(`installs/${memberId}`).once('value');
-                snaps.forEach((install) => {
-                    if (install.key) {
-                        installs.push({ id: install.key, userId: memberId, unreads: unreads });
-                    }
-                    return false;
-                });
-            });
+        /* Notify */
+        try {
+            /* Gather installs */
+            const installs = [];
+            const promises = [];
+            for (const notifyId of notifyIds) {
+                promises.push(notifications.gatherInstalls(notifyId, installs));
+            }
+            yield Promise.all(promises);
+            if (installs.length === 0) {
+                return;
+            }
+            const username = (yield shared.getUser(createdBy)).val().username;
+            const channelName = (yield shared.getChannel(channelId)).val().name;
+            const data = {
+                user_id: createdBy,
+                channel_id: channelId,
+                message_id: messageId,
+            };
+            let notificationText = '';
+            if (message.photo) {
+                notificationText = `#${channelName} @${username}: @${username} posted a photo`;
+                if (message.text) {
+                    notificationText += ` and commented: ${message.text}`;
+                }
+            }
+            else if (message.text) {
+                notificationText = `#${channelName} @${username}: ${message.text}`;
+            }
+            yield notifications.sendMessages(installs, notificationText, data);
+        }
+        catch (err) {
+            console.error('Error processing new message notifications: ', err);
+            return;
         }
     });
 }
@@ -120,7 +107,6 @@ function updated(previous, current) {
         const channelId = current.val().channel_id;
         const previousPhoto = shared.getPhotoFromMessage(previous.val());
         const currentPhoto = shared.getPhotoFromMessage(current.val());
-        console.log(`Message updated: ${messageId} for: ${channelId}`);
         if (previousPhoto) {
             if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
                 if (previousPhoto.source === 'google-storage') {

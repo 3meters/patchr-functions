@@ -235,9 +235,9 @@
     },
     "invites": {
       "$inviteId": {
-        ".validate": "newData.hasChildren(['created_at', 'created_by', 'email', 'inviter', 'link', 'role'])",
+        ".validate": "newData.hasChildren(['channel', 'created_at', 'created_by', 'email', 'inviter', 'link', 'role'])",
         "channel": {
-          ".validate": "newData.hasChildren() && newData.hasChildren(['id', 'title'])",
+          ".validate": "newData.hasChildren(['id', 'title'])",
           "id": {
             ".validate": "newData.isString() && newData.val().length == 12"
           },

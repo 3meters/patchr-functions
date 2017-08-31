@@ -45,4 +45,17 @@ function sendMessages(installs, message, payloadData) {
     });
 }
 exports.sendMessages = sendMessages;
+function gatherInstalls(memberId, installs) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const unreads = ((yield shared.database.ref(`counters/${memberId}/unreads`).once('value')).val() || 0) + 1;
+        const snaps = yield shared.database.ref(`installs/${memberId}`).once('value');
+        snaps.forEach((install) => {
+            if (install.key) {
+                installs.push({ id: install.key, userId: memberId, unreads: unreads });
+            }
+            return false;
+        });
+    });
+}
+exports.gatherInstalls = gatherInstalls;
 //# sourceMappingURL=notifications.js.map

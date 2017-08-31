@@ -26,7 +26,7 @@ exports.onWriteInvite = onWriteInvite;
 function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const invite = current.val();
-        console.log(`Invite created: ${current.key}`);
+        console.log(`Invite created: ${current.key} by: ${invite.inviter.id} for: ${invite.email}`);
         try {
             invite.id = current.key;
             yield sendInviteEmail(invite);
@@ -73,8 +73,8 @@ function sendInviteEmail(invite) {
                 throw new Error(`SendGrid: too many requests: ${statusCode}`);
             }
             else if (statusCode >= 400 && statusCode <= 499) {
-                console.error(`SendGrid: error with the request: ${statusCode}`);
-                throw new Error(`SendGrid: error with the request: ${statusCode}`);
+                console.error(`SendGrid: error with the request: code: ${statusCode} request: ${request}`);
+                throw new Error(`SendGrid: error with the request: code: ${statusCode} request: ${request}`);
             }
             else if (statusCode >= 500) {
                 console.error(`SendGrid: error in SendGrid system: ${statusCode}`);
