@@ -38,7 +38,6 @@ async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
   const channelId: string = current.key
   const previousPhoto: any = previous.val().photo
   const currentPhoto: any = current.val().photo
-  console.log(`Channel updated: ${channelId}`)
 
   if (current.child('title').changed()) {
     const slug = shared.slugify(current.val().title)

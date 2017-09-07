@@ -48,7 +48,6 @@ function updated(previous, current) {
         const channelId = current.key;
         const previousPhoto = previous.val().photo;
         const currentPhoto = current.val().photo;
-        console.log(`Channel updated: ${channelId}`);
         if (current.child('title').changed()) {
             const slug = shared.slugify(current.val().title);
             const updates = {};

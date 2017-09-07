@@ -53,25 +53,25 @@ describe('Channel Membership', function() {
       expect(users.worker).can.write("none").to.path(path + "/notifications")
     })
 
-    it('worker and role owner can update channel role', function() {
+    it('worker and channel owner can update channel role to owner', function() {
       const path = "channel-members/ch-generalxx/us-maryxxxxx"
-      expect(users.cheeta).cannot.write("owner").to.path(path + "/role")
-      expect(users.mary).cannot.write("owner").to.path(path + "/role") // creator
-      expect(users.jane).cannot.write("owner").to.path(path + "/role") 
-      expect(users.tarzan).can.write("owner").to.path(path + "/role") // channel owner
+      expect(users.cheeta).cannot.write("owner").to.path(path + "/role") // Not a channel member
+      expect(users.mary).cannot.write("owner").to.path(path + "/role") // creator, role editor
+      expect(users.jane).cannot.write("owner").to.path(path + "/role") // role editor
+      expect(users.tarzan).can.write("owner").to.path(path + "/role") // channel owner, role owner
       expect(users.worker).can.write("owner").to.path(path + "/role")
     })
 
-    it('channel owner or role owner can update channel role', function() {
+    it('channel owner or role owner can update channel role to editor', function() {
       const path = "channel-members/ch-privatexx/us-tarzanxxx"
       expect(users.cheeta).cannot.write("editor").to.path(path + "/role") // no status
-      expect(users.tarzan).cannot.write("editor").to.path(path + "/role") // role reader
+      expect(users.tarzan).cannot.write("editor").to.path(path + "/role") // creator, role reader
       expect(users.mary).can.write("editor").to.path(path + "/role") // role owner
-      expect(users.jane).can.write("editor").to.path(path + "/role") // channel owner
+      expect(users.jane).can.write("editor").to.path(path + "/role") // channel owner, role owner
       expect(users.worker).can.write("editor").to.path(path + "/role")
     })
 
-    it('channel owner cannot update role', function() {
+    it('only worker can update role of primary channel owner', function() {
       const path = "channel-members/ch-privatexx/us-janexxxxx"
       expect(users.cheeta).cannot.write("editor").to.path(path + "/role") // no status
       expect(users.tarzan).cannot.write("editor").to.path(path + "/role") // role reader
