@@ -406,3 +406,6 @@ path /member-channels/{userId} {
 path /channels {
     index() {["owned_by"]}
 }
+path /channel-messages/{channelId} {
+    index() {["attachments"]}
+}
