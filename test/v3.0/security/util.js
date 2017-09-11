@@ -261,6 +261,7 @@ function addInvites(data) {
         "username": "jane"
       },
       "link": "https://bvvb.app.link/X3Kj57ZbWz",
+      "language": "en",
       "role": "reader",
     }
   }

@@ -32,7 +32,8 @@ describe('Invites', function() {
         title: "Tarzan Johnson-Smith",
         username: "tarzan"
       },
-      link: "https://bvvb.app.link/X3Kj57ZbWz",
+      language: "en",
+      link: "https://patchr.app.link/X3Kj57ZbWz",
       role: "reader",
     }
 

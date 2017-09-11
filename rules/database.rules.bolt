@@ -164,6 +164,9 @@ type PatchrKey extends String {
 type EmailString extends String {
     validate() { this.length <= 256 }
 }
+type LanguageString extends String {
+    validate() { this.length == 2 }
+}
 type UrlString extends String {
     validate() { this.length <= 256 }
 }
@@ -262,8 +265,9 @@ type Photo {
 }
 type Profile {
     first_name: ValueString|Null,
-    last_name: ValueString|Null,
     full_name: ValueString|Null,
+    language: LanguageString|Null,
+    last_name: ValueString|Null,
     phone: ValueString|Null,
     photo: Photo|Null
 }
@@ -303,6 +307,7 @@ type Invite {
     created_by: UserKey,
     email: EmailString,
     inviter: Inviter,
+    language: LanguageString|Null,
     link: UrlString,
     message: DescriptionString|Null,
     role: ChannelRole
