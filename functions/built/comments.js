@@ -66,15 +66,23 @@ function created(current) {
             if (installs.length === 0) {
                 return;
             }
-            const username = (yield shared.getUser(comment.created_by)).val().username;
             const channelName = (yield shared.getChannel(channelId)).val().name;
+            const user = (yield shared.getUser(notifyId)).val();
+            const username = user.username;
+            const language = user.profile.language ? user.profile.language : 'en';
             const data = {
                 user_id: comment.created_by,
                 channel_id: channelId,
                 message_id: messageId,
             };
-            const notificationText = `#${channelName} @${username}: commented on a post: ${comment.text}`;
-            yield notifications.sendMessages(installs, notificationText, data);
+            if (language === 'en') {
+                const notificationText = `#${channelName} @${username}: commented on a post: ${comment.text}`;
+                yield notifications.sendMessages(installs, notificationText, data);
+            }
+            else if (language === 'ru') {
+                const notificationText = `#${channelName} @${username}: прокомментировал сообщение: ${comment.text}`;
+                yield notifications.sendMessages(installs, notificationText, data);
+            }
         }
         catch (err) {
             console.error('Error processing new comment notifications: ', err);

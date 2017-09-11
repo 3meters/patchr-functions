@@ -74,7 +74,7 @@ function getOwnedChannelIds(userId) {
     });
 }
 exports.getOwnedChannelIds = getOwnedChannelIds;
-function getMembersToNotify(channelId, exclude) {
+function getMemberIdsToNotify(channelId, exclude) {
     return __awaiter(this, void 0, void 0, function* () {
         const members = yield exports.database
             .ref(`channel-members/${channelId}`)
@@ -89,7 +89,7 @@ function getMembersToNotify(channelId, exclude) {
         return values;
     });
 }
-exports.getMembersToNotify = getMembersToNotify;
+exports.getMemberIdsToNotify = getMemberIdsToNotify;
 function getUser(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const value = yield exports.database

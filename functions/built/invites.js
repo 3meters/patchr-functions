@@ -41,8 +41,16 @@ function sendInviteEmail(invite) {
         const mail = new sendgrid_1.mail.Mail();
         const personalization = new sendgrid_1.mail.Personalization();
         const fromEmail = new sendgrid_1.mail.Email('noreply@patchr.com', 'Patchr');
+        const language = invite.language;
+        let templateId = invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9';
+        if (language) {
+            if (language === 'ru') {
+                /* Switch to russian templates when available */
+                templateId = invite.message ? '2148f65c-535f-4db4-bf8c-ea18b7fb1917' : '61608101-327d-44c3-9622-def58a1c6a44';
+            }
+        }
         mail.setFrom(fromEmail);
-        mail.setTemplateId(invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9');
+        mail.setTemplateId(templateId);
         const role = invite.role === 'editor' ? 'contributor' : invite.role;
         personalization.addTo(new sendgrid_1.mail.Email(invite.email));
         personalization.addSubstitution(new sendgrid_1.mail.Substitution('-channel.title-', invite.channel.title));

@@ -31,22 +31,29 @@ exports.onWriteMessage = onWriteMessage;
 function created(current) {
     return __awaiter(this, void 0, void 0, function* () {
         const message = current.val();
-        const messageRef = current.val().adminRef;
+        const messageRef = current.adminRef;
         const messageId = current.key;
         const channelId = message.channel_id;
         const createdBy = message.created_by;
         if (message.moving) {
-            console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`);
             const updates = { moving: null };
-            yield messageRef.adminRef.update(updates);
+            yield messageRef.update(updates);
+            console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`);
             return;
         }
         console.log(`Message created: ${messageId} for: ${channelId} by: ${createdBy}`);
         /* Gather channel members except muted or author */
-        const notifyIds = yield shared.getMembersToNotify(channelId, [createdBy]);
+        const notifyIds = yield shared.getMemberIdsToNotify(channelId, [createdBy]);
         if (notifyIds.length === 0) {
             return;
         }
+        const members = [];
+        for (const notifyId of notifyIds) {
+            const user = (yield shared.getUser(notifyId)).val();
+            const language = user.profile.language ? user.profile.language : 'en';
+            members.push({ id: notifyId, language: language });
+        }
+        console.log('Members to notify count: ', members.length);
         /* Flag unread, tickle activity */
         try {
             const updates = {};
@@ -57,7 +64,6 @@ function created(current) {
                 updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc;
                 updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy;
             });
-            console.log('Channel members to notify: ' + notifyIds.length);
             yield shared.database.ref().update(updates);
         }
         catch (err) {
@@ -67,13 +73,19 @@ function created(current) {
         /* Notify */
         try {
             /* Gather installs */
-            const installs = [];
+            const installsEn = [];
+            const installsRu = [];
             const promises = [];
-            for (const notifyId of notifyIds) {
-                promises.push(notifications.gatherInstalls(notifyId, installs));
+            for (const member of members) {
+                if (member.language === 'ru') {
+                    promises.push(notifications.gatherInstalls(member.id, installsRu));
+                }
+                else {
+                    promises.push(notifications.gatherInstalls(member.id, installsEn));
+                }
             }
             yield Promise.all(promises);
-            if (installs.length === 0) {
+            if (installsEn.length === 0 && installsRu.length === 0) {
                 return;
             }
             const username = (yield shared.getUser(createdBy)).val().username;
@@ -83,17 +95,35 @@ function created(current) {
                 channel_id: channelId,
                 message_id: messageId,
             };
-            let notificationText = '';
-            if (message.photo) {
-                notificationText = `#${channelName} @${username}: @${username} posted a photo`;
-                if (message.text) {
-                    notificationText += ` and commented: ${message.text}`;
+            const photo = shared.getPhotoFromMessage(message);
+            /* English */
+            if (installsEn.length > 0) {
+                let notificationText = '';
+                if (photo) {
+                    notificationText = `#${channelName}: @${username} posted a photo`;
+                    if (message.text) {
+                        notificationText += ` and commented: ${message.text}`;
+                    }
                 }
+                else if (message.text) {
+                    notificationText = `#${channelName} @${username}: ${message.text}`;
+                }
+                yield notifications.sendMessages(installsEn, notificationText, data);
             }
-            else if (message.text) {
-                notificationText = `#${channelName} @${username}: ${message.text}`;
+            /* Russian */
+            if (installsRu.length > 0) {
+                let notificationText = '';
+                if (photo) {
+                    notificationText = `#${channelName}: @${username} опубликовала фотографию`;
+                    if (message.text) {
+                        notificationText += ` и прокомментировала: ${message.text}`;
+                    }
+                }
+                else if (message.text) {
+                    notificationText = `#${channelName} @${username}: ${message.text}`;
+                }
+                yield notifications.sendMessages(installsRu, notificationText, data);
             }
-            yield notifications.sendMessages(installs, notificationText, data);
         }
         catch (err) {
             console.error('Error processing new message notifications: ', err);

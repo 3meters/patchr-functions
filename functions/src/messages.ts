@@ -20,23 +20,31 @@ export async function onWriteMessage(event: shared.DatabaseEvent) {
 async function created(current: shared.DeltaSnapshot) {
 
   const message = current.val()
-  const messageRef = current.val().adminRef
+  const messageRef = current.adminRef
   const messageId: string = current.key
   const channelId: string = message.channel_id
   const createdBy: string = message.created_by
   
   if (message.moving) {
-    console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`)
     const updates = { moving: null }
-    await messageRef.adminRef.update(updates)
+    await messageRef.update(updates)
+    console.log(`Message moved: ${messageId} to: ${channelId} by: ${createdBy}`)
     return 
   }
 
   console.log(`Message created: ${messageId} for: ${channelId} by: ${createdBy}`)
   
   /* Gather channel members except muted or author */
-  const notifyIds: string[] = await shared.getMembersToNotify(channelId, [createdBy])
+  const notifyIds: string[] = await shared.getMemberIdsToNotify(channelId, [createdBy])
   if (notifyIds.length === 0) { return }
+
+  const members: any[] = []
+  for (const notifyId of notifyIds) {
+    const user: any = (await shared.getUser(notifyId)).val()
+    const language: string = user.profile.language ? user.profile.language : 'en'
+    members.push({ id: notifyId, language: language })
+  }
+  console.log('Members to notify count: ', members.length)
 
   /* Flag unread, tickle activity */
   try {
@@ -48,7 +56,6 @@ async function created(current: shared.DeltaSnapshot) {
       updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc
       updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy
     })
-    console.log('Channel members to notify: ' + notifyIds.length)
     await shared.database.ref().update(updates)
   } 
   catch (err) {
@@ -59,14 +66,20 @@ async function created(current: shared.DeltaSnapshot) {
   /* Notify */
   try {
     /* Gather installs */
-    const installs: any[] = []
+    const installsEn: any[] = []
+    const installsRu: any[] = []
     const promises: any[] = []
-    for (const notifyId of notifyIds) {
-      promises.push(notifications.gatherInstalls(notifyId, installs))
+    for (const member of members) {
+      if (member.language === 'ru') {
+        promises.push(notifications.gatherInstalls(member.id, installsRu))
+      }
+      else {
+        promises.push(notifications.gatherInstalls(member.id, installsEn))
+      }
     }
     await Promise.all(promises)
 
-    if (installs.length === 0) { return }
+    if (installsEn.length === 0 && installsRu.length === 0) { return }
 
     const username: string = (await shared.getUser(createdBy)).val().username
     const channelName: string = (await shared.getChannel(channelId)).val().name
@@ -75,17 +88,37 @@ async function created(current: shared.DeltaSnapshot) {
       channel_id: channelId,
       message_id: messageId,
     }
-    let notificationText: string = ''
-    if (message.photo) {
-      notificationText = `#${channelName} @${username}: @${username} posted a photo`
-      if (message.text) {
-        notificationText += ` and commented: ${message.text}`
+    const photo: any = shared.getPhotoFromMessage(message)    
+
+    /* English */
+    if (installsEn.length > 0 ) {
+      let notificationText: string = ''
+      if (photo) {
+        notificationText = `#${channelName}: @${username} posted a photo`
+        if (message.text) {
+          notificationText += ` and commented: ${message.text}`
+        }
+      } 
+      else if (message.text) {
+        notificationText = `#${channelName} @${username}: ${message.text}`
       }
-    } 
-    else if (message.text) {
-      notificationText = `#${channelName} @${username}: ${message.text}`
+      await notifications.sendMessages(installsEn, notificationText, data)
     }
-    await notifications.sendMessages(installs, notificationText, data)
+
+    /* Russian */
+    if (installsRu.length > 0 ) {
+      let notificationText: string = ''
+      if (photo) {
+        notificationText = `#${channelName}: @${username} опубликовала фотографию`
+        if (message.text) {
+          notificationText += ` и прокомментировала: ${message.text}`
+        }
+      } 
+      else if (message.text) {
+        notificationText = `#${channelName} @${username}: ${message.text}`
+      }
+      await notifications.sendMessages(installsRu, notificationText, data)
+    }
   } 
   catch (err) {
     console.error('Error processing new message notifications: ', err)

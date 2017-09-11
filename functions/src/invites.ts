@@ -32,9 +32,18 @@ async function sendInviteEmail(invite: any) {
   const mail = new helper.Mail()
   const personalization = new helper.Personalization()
   const fromEmail = new helper.Email('noreply@patchr.com', 'Patchr')
+  const language = invite.language
+  let templateId = invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9'
+
+  if (language) {
+    if (language === 'ru') {
+      /* Switch to russian templates when available */
+      templateId = invite.message ? '2148f65c-535f-4db4-bf8c-ea18b7fb1917' : '61608101-327d-44c3-9622-def58a1c6a44'
+    }
+  }
 
   mail.setFrom(fromEmail)
-  mail.setTemplateId(invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9')
+  mail.setTemplateId(templateId)
 
   const role = invite.role === 'editor' ? 'contributor' : invite.role
 

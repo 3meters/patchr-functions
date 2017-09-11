@@ -53,20 +53,29 @@ async function created(current: shared.DeltaSnapshot) {
     /* Gather installs */
     const installs: any[] = []
     const promises: any[] = []
+
     promises.push(notifications.gatherInstalls(notifyId, installs))
     await Promise.all(promises)
 
     if (installs.length === 0) { return }
 
-    const username: string = (await shared.getUser(comment.created_by)).val().username
     const channelName: string = (await shared.getChannel(channelId)).val().name
+    const user: any = (await shared.getUser(notifyId)).val()
+    const username: string = user.username
+    const language: string = user.profile.language ? user.profile.language : 'en'
     const data = {
       user_id: comment.created_by,
       channel_id: channelId,
       message_id: messageId,
     }
-    const notificationText: string = `#${channelName} @${username}: commented on a post: ${comment.text}`
-    await notifications.sendMessages(installs, notificationText, data)
+    if (language === 'en') {
+      const notificationText: string = `#${channelName} @${username}: commented on a post: ${comment.text}`
+      await notifications.sendMessages(installs, notificationText, data)
+    }
+    else if (language === 'ru') {
+      const notificationText: string = `#${channelName} @${username}: прокомментировал сообщение: ${comment.text}`
+      await notifications.sendMessages(installs, notificationText, data)
+    }
   } 
   catch (err) {
     console.error('Error processing new comment notifications: ', err)

@@ -3,6 +3,7 @@
  */
 import * as admin from 'firebase-admin'
 import * as functions from 'firebase-functions'
+import * as _ from 'lodash'
 import * as slugifyjs from 'slugify'
 
 admin.initializeApp(functions.config().firebase)
@@ -63,7 +64,7 @@ export async function getOwnedChannelIds(userId: string) {
   return values
 }
 
-export async function getMembersToNotify(channelId: string, exclude: string[]) {
+export async function getMemberIdsToNotify(channelId: string, exclude: string[]) {
   const members: DataSnapshot = await database
     .ref(`channel-members/${channelId}`)
     .once('value')
