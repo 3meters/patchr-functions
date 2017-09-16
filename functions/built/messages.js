@@ -57,13 +57,15 @@ function created(current) {
         /* Flag unread, tickle activity */
         try {
             const updates = {};
-            notifyIds.forEach((memberId) => {
-                updates[`unreads/${memberId}/${channelId}/${messageId}`] = true;
-                /* Trigger will mirror these updates to 'member-channels' */
-                updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at;
-                updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc;
-                updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy;
-            });
+            for (const notifyId of notifyIds) {
+                updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true;
+                updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at;
+                updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc;
+                updates[`member-channels/${notifyId}/${channelId}/activity_by`] = createdBy;
+                updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at;
+                updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${notifyId}/activity_by`] = createdBy;
+            }
             yield shared.database.ref().update(updates);
         }
         catch (err) {
@@ -73,19 +75,13 @@ function created(current) {
         /* Notify */
         try {
             /* Gather installs */
-            const installsEn = [];
-            const installsRu = [];
+            const installs = { en: [], ru: [] };
             const promises = [];
             for (const member of members) {
-                if (member.language === 'ru') {
-                    promises.push(notifications.gatherInstalls(member.id, installsRu));
-                }
-                else {
-                    promises.push(notifications.gatherInstalls(member.id, installsEn));
-                }
+                promises.push(notifications.gatherInstalls(member.id, installs[member.language]));
             }
             yield Promise.all(promises);
-            if (installsEn.length === 0 && installsRu.length === 0) {
+            if (installs.en.length === 0 && installs.ru.length === 0) {
                 return;
             }
             const username = (yield shared.getUser(createdBy)).val().username;
@@ -97,7 +93,7 @@ function created(current) {
             };
             const photo = shared.getPhotoFromMessage(message);
             /* English */
-            if (installsEn.length > 0) {
+            if (installs.en.length > 0) {
                 let notificationText = '';
                 if (photo) {
                     notificationText = `#${channelName}: @${username} posted a photo`;
@@ -108,10 +104,10 @@ function created(current) {
                 else if (message.text) {
                     notificationText = `#${channelName} @${username}: ${message.text}`;
                 }
-                yield notifications.sendMessages(installsEn, notificationText, data);
+                yield notifications.sendMessages(installs.en, notificationText, data);
             }
             /* Russian */
-            if (installsRu.length > 0) {
+            if (installs.ru.length > 0) {
                 let notificationText = '';
                 if (photo) {
                     notificationText = `#${channelName}: @${username} опубликовала фотографию`;
@@ -122,7 +118,7 @@ function created(current) {
                 else if (message.text) {
                     notificationText = `#${channelName} @${username}: ${message.text}`;
                 }
-                yield notifications.sendMessages(installsRu, notificationText, data);
+                yield notifications.sendMessages(installs.ru, notificationText, data);
             }
         }
         catch (err) {

@@ -40,9 +40,9 @@ async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
   const currentPhoto: any = current.val().photo
 
   if (current.child('title').changed()) {
-    const slug = shared.slugify(current.val().title)
+    const slug: string = shared.slugify(current.val().title) // converts all intl chars to url legal chars
     const updates = {}
-    updates[`channels/${channelId}/name`] = slug
+    updates[`channels/${channelId}/name`] = slug.toLowerCase()
     await shared.database.ref().update(updates)  
   }
 

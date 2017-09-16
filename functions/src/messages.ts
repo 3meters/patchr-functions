@@ -49,13 +49,15 @@ async function created(current: shared.DeltaSnapshot) {
   /* Flag unread, tickle activity */
   try {
     const updates = {}
-    notifyIds.forEach((memberId) => {
-      updates[`unreads/${memberId}/${channelId}/${messageId}`] = true
-      /* Trigger will mirror these updates to 'member-channels' */
-      updates[`channel-members/${channelId}/${memberId}/activity_at`] = message.created_at
-      updates[`channel-members/${channelId}/${memberId}/activity_at_desc`] = message.created_at_desc
-      updates[`channel-members/${channelId}/${memberId}/activity_by`] = createdBy
-    })
+    for (const notifyId of notifyIds) {
+      updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true
+      updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at
+      updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc
+      updates[`member-channels/${notifyId}/${channelId}/activity_by`] = createdBy
+      updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at
+      updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc
+      updates[`channel-members/${channelId}/${notifyId}/activity_by`] = createdBy
+    }
     await shared.database.ref().update(updates)
   } 
   catch (err) {
@@ -66,20 +68,14 @@ async function created(current: shared.DeltaSnapshot) {
   /* Notify */
   try {
     /* Gather installs */
-    const installsEn: any[] = []
-    const installsRu: any[] = []
+    const installs = { en: [], ru: []}
     const promises: any[] = []
     for (const member of members) {
-      if (member.language === 'ru') {
-        promises.push(notifications.gatherInstalls(member.id, installsRu))
-      }
-      else {
-        promises.push(notifications.gatherInstalls(member.id, installsEn))
-      }
+      promises.push(notifications.gatherInstalls(member.id, installs[member.language]))
     }
     await Promise.all(promises)
 
-    if (installsEn.length === 0 && installsRu.length === 0) { return }
+    if (installs.en.length === 0 && installs.ru.length === 0) { return }
 
     const username: string = (await shared.getUser(createdBy)).val().username
     const channelName: string = (await shared.getChannel(channelId)).val().name
@@ -91,7 +87,7 @@ async function created(current: shared.DeltaSnapshot) {
     const photo: any = shared.getPhotoFromMessage(message)    
 
     /* English */
-    if (installsEn.length > 0 ) {
+    if (installs.en.length > 0 ) {
       let notificationText: string = ''
       if (photo) {
         notificationText = `#${channelName}: @${username} posted a photo`
@@ -102,11 +98,11 @@ async function created(current: shared.DeltaSnapshot) {
       else if (message.text) {
         notificationText = `#${channelName} @${username}: ${message.text}`
       }
-      await notifications.sendMessages(installsEn, notificationText, data)
+      await notifications.sendMessages(installs.en, notificationText, data)
     }
 
     /* Russian */
-    if (installsRu.length > 0 ) {
+    if (installs.ru.length > 0 ) {
       let notificationText: string = ''
       if (photo) {
         notificationText = `#${channelName}: @${username} опубликовала фотографию`
@@ -117,7 +113,7 @@ async function created(current: shared.DeltaSnapshot) {
       else if (message.text) {
         notificationText = `#${channelName} @${username}: ${message.text}`
       }
-      await notifications.sendMessages(installsRu, notificationText, data)
+      await notifications.sendMessages(installs.ru, notificationText, data)
     }
   } 
   catch (err) {

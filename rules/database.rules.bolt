@@ -86,6 +86,9 @@ path /member-channels/{userId} {
 path /member-channels/{userId}/{channelId} is ChannelMember {
     create() { 
         isLoggedIn() && channelExists(channelId) && isChannelCode(channelId, this.code)}
+    update() { 
+        isLoggedIn() && 
+        isCreatorOf(this) && this.role == prior(this.role)}
     delete() { 
         isLoggedIn() && (isCreatorOf(this) || isChannelOwner(channelId, auth.uid)) && 
         (root["channels"][channelId] == null ||

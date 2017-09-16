@@ -49,9 +49,9 @@ function updated(previous, current) {
         const previousPhoto = previous.val().photo;
         const currentPhoto = current.val().photo;
         if (current.child('title').changed()) {
-            const slug = shared.slugify(current.val().title);
+            const slug = shared.slugify(current.val().title); // converts all intl chars to url legal chars
             const updates = {};
-            updates[`channels/${channelId}/name`] = slug;
+            updates[`channels/${channelId}/name`] = slug.toLowerCase();
             yield shared.database.ref().update(updates);
         }
         if (previousPhoto) {

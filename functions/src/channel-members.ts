@@ -30,7 +30,6 @@ async function created(params: any, current: shared.DeltaSnapshot) {
 
 async function updated(params: any, previous: DeltaSnapshot, current: DeltaSnapshot) {
   const membership = current.val()
-  console.log(`Membership of: ${params.userId} updated for channel: ${params.channelId}`)
   try {
     await shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership)
   } catch (err) {
