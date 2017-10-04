@@ -5,19 +5,21 @@ import * as admin from 'firebase-admin'
 import * as shared from './shared'
 
 type Response = admin.messaging.MessagingDevicesResponse
+type Payload = admin.messaging.MessagingPayload
+type DataPayload = admin.messaging.DataMessagePayload
+type MessagePayload = admin.messaging.NotificationMessagePayload
+type Options = admin.messaging.MessagingOptions
 
-export async function sendMessages(installs: any[], message: string, payloadData: any) {
+export async function sendMessages(installs: any[], message: string, payloadData: DataPayload) {
 
-  const payload: any = {
-    notification: {
-      body: message,
-      sound: 'chirp.caf',
-    },
-    data: payloadData,
+  const payload: Payload = {}
+  payload.data = payloadData
+  payload.notification = {
+    body: message,
+    sound: 'chirp.caf',
   }
 
-  const options: any = {
-    contentAvailable: true,
+  const options: Options = {
     priority: 'high',
   }
 

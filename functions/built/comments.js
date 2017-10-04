@@ -46,7 +46,7 @@ function created(current) {
         } // Don't notify if self commenting.
         try {
             const updates = {};
-            updates[`unreads/${notifyId}/${channelId}/${messageId}`] = commentId;
+            updates[`unreads/${notifyId}/${channelId}/${messageId}/comments/${commentId}`] = true;
             updates[`channel-members/${channelId}/${notifyId}/activity_at`] = comment.created_at;
             updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = comment.created_at_desc;
             updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by;
@@ -80,7 +80,7 @@ function created(current) {
                 yield notifications.sendMessages(installs, notificationText, data);
             }
             else if (language === 'ru') {
-                const notificationText = `#${channelName} @${username}: прокомментировал сообщение: ${comment.text}`;
+                const notificationText = `#${channelName} @${username}: прокомментировал(а) публикацию: ${comment.text}`;
                 yield notifications.sendMessages(installs, notificationText, data);
             }
         }

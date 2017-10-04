@@ -44,7 +44,7 @@ async function sendInviteEmail(invite: any) {
         role = 'Читатель'
       }
       else if (role === 'contributor') {
-        role = 'Вкладчик'
+        role = 'Соавтор'
       }
       else if (role === 'owner') {
         role = 'Владелец'

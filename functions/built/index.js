@@ -30,13 +30,21 @@ exports.onCreateComment = functions
     .database
     .ref('/message-comments/{channelId}/{messageId}/{commentId}')
     .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
-exports.onCreateUnread = functions
+exports.onCreateMessageUnread = functions
     .database
-    .ref('/unreads/{userId}/{channelId}/{messageId}')
+    .ref('/unreads/{userId}/{channelId}/{messageId}/message')
     .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
-exports.onDeleteUnread = functions
+exports.onDeleteMessageUnread = functions
     .database
-    .ref('/unreads/{userId}/{channelId}/{messageId}')
+    .ref('/unreads/{userId}/{channelId}/{messageId}/message')
+    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+exports.onCreateCommentUnread = functions
+    .database
+    .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
+    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+exports.onDeleteCommentUnread = functions
+    .database
+    .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
     .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
 exports.onCreateInvite = functions
     .database

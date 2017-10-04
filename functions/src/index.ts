@@ -26,14 +26,24 @@ export let onCreateComment = functions
   .ref('/message-comments/{channelId}/{messageId}/{commentId}')
   .onCreate(async (event) => await comments.onWriteComment(event))
 
-export let onCreateUnread = functions
+export let onCreateMessageUnread = functions
   .database
-  .ref('/unreads/{userId}/{channelId}/{messageId}')
+  .ref('/unreads/{userId}/{channelId}/{messageId}/message')
   .onCreate(async (event) => await unreads.onWriteUnread(event))
 
-export let onDeleteUnread = functions
+export let onDeleteMessageUnread = functions
   .database
-  .ref('/unreads/{userId}/{channelId}/{messageId}')
+  .ref('/unreads/{userId}/{channelId}/{messageId}/message')
+  .onDelete(async (event) => await unreads.onWriteUnread(event))
+
+export let onCreateCommentUnread = functions
+  .database
+  .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
+  .onCreate(async (event) => await unreads.onWriteUnread(event))
+
+export let onDeleteCommentUnread = functions
+  .database
+  .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
   .onDelete(async (event) => await unreads.onWriteUnread(event))
 
 export let onCreateInvite = functions

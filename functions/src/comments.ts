@@ -37,7 +37,7 @@ async function created(current: shared.DeltaSnapshot) {
 
   try {
     const updates = {}
-    updates[`unreads/${notifyId}/${channelId}/${messageId}`] = commentId
+    updates[`unreads/${notifyId}/${channelId}/${messageId}/comments/${commentId}`] = true
     updates[`channel-members/${channelId}/${notifyId}/activity_at`] = comment.created_at
     updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = comment.created_at_desc
     updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by    
@@ -73,7 +73,7 @@ async function created(current: shared.DeltaSnapshot) {
       await notifications.sendMessages(installs, notificationText, data)
     }
     else if (language === 'ru') {
-      const notificationText: string = `#${channelName} @${username}: прокомментировал сообщение: ${comment.text}`
+      const notificationText: string = `#${channelName} @${username}: прокомментировал(а) публикацию: ${comment.text}`
       await notifications.sendMessages(installs, notificationText, data)
     }
   } 

@@ -441,8 +441,12 @@
         "$channelId": {
           ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
           "$messageId": {
-            ".validate": "newData.isBoolean() || newData.isString() && newData.val().length == 20",
-            ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId)"
+            ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId)",
+            "comments": {
+              "$commentId": {
+                ".write": "data.val() != null && newData.val() == null && (auth != null && auth.uid == $userId)"
+              }
+            }
           }
         }
       }

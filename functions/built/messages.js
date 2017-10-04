@@ -57,14 +57,14 @@ function created(current) {
         /* Flag unread, tickle activity */
         try {
             const updates = {};
-            for (const notifyId of notifyIds) {
-                updates[`unreads/${notifyId}/${channelId}/${messageId}`] = true;
-                updates[`member-channels/${notifyId}/${channelId}/activity_at`] = message.created_at;
-                updates[`member-channels/${notifyId}/${channelId}/activity_at_desc`] = message.created_at_desc;
-                updates[`member-channels/${notifyId}/${channelId}/activity_by`] = createdBy;
-                updates[`channel-members/${channelId}/${notifyId}/activity_at`] = message.created_at;
-                updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = message.created_at_desc;
-                updates[`channel-members/${channelId}/${notifyId}/activity_by`] = createdBy;
+            for (const userId of notifyIds) {
+                updates[`unreads/${userId}/${channelId}/${messageId}/message`] = true;
+                updates[`member-channels/${userId}/${channelId}/activity_at`] = message.created_at;
+                updates[`member-channels/${userId}/${channelId}/activity_at_desc`] = message.created_at_desc;
+                updates[`member-channels/${userId}/${channelId}/activity_by`] = createdBy;
+                updates[`channel-members/${channelId}/${userId}/activity_at`] = message.created_at;
+                updates[`channel-members/${channelId}/${userId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${userId}/activity_by`] = createdBy;
             }
             yield shared.database.ref().update(updates);
         }
@@ -110,9 +110,9 @@ function created(current) {
             if (installs.ru.length > 0) {
                 let notificationText = '';
                 if (photo) {
-                    notificationText = `#${channelName}: @${username} опубликовала фотографию`;
+                    notificationText = `#${channelName}: @${username} опубликовал(а) фото`;
                     if (message.text) {
-                        notificationText += ` и прокомментировала: ${message.text}`;
+                        notificationText += ` и прокомментировал(а): ${message.text}`;
                     }
                 }
                 else if (message.text) {

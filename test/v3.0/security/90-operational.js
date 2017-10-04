@@ -77,8 +77,16 @@ describe('Operational', function() {
       expect(users.mary).cannot.write(true).to.path(path)
       expect(users.tarzan).cannot.write(true).to.path(path)
       expect(users.jane).cannot.write(true).to.path(path)
+      expect(users.worker).can.write('comments').to.path(path)
       expect(users.worker).can.write(true).to.path(path)
-      expect(users.worker).can.write('-KrWb-uWAFkrKQAS4NA8').to.path(path) // comment
+    })
+    it('only worker can create comment unreads', function() {
+      const path = 'unreads/us-janexxxxx/ch-generalxx/me-messagex1/comments/-KrWb-uWAFkrKQAS4NA8'
+      expect(users.unauth).cannot.write(true).to.path(path)
+      expect(users.mary).cannot.write(true).to.path(path)
+      expect(users.tarzan).cannot.write(true).to.path(path)
+      expect(users.jane).cannot.write(true).to.path(path)
+      expect(users.worker).can.write(true).to.path(path) // comment
     })
     it('only current user or worker can read their unreads', function() {
       const path = 'unreads/us-janexxxxx'

@@ -11,15 +11,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const shared = require("./shared");
 function sendMessages(installs, message, payloadData) {
     return __awaiter(this, void 0, void 0, function* () {
-        const payload = {
-            notification: {
-                body: message,
-                sound: 'chirp.caf',
-            },
-            data: payloadData,
+        const payload = {};
+        payload.data = payloadData;
+        payload.notification = {
+            body: message,
+            sound: 'chirp.caf',
         };
         const options = {
-            contentAvailable: true,
             priority: 'high',
         };
         for (const install of installs) {
