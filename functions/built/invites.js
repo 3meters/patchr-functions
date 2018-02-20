@@ -30,6 +30,7 @@ function created(current) {
         try {
             invite.id = current.key;
             yield sendInviteEmail(invite);
+            yield log(invite);
         }
         catch (err) {
             console.error(`Error sending invite email: ${err}`);
@@ -97,6 +98,35 @@ function sendInviteEmail(invite) {
                 console.error(`SendGrid: error in SendGrid system: ${statusCode}`);
                 throw new Error(`SendGrid: error in SendGrid system: ${statusCode}`);
             }
+        }
+    });
+}
+function log(invite) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /* Activity */
+        try {
+            const channelId = invite.channel.id;
+            const channelName = shared.slugify(invite.channel.title);
+            const user = (yield shared.getUser(invite.inviter.id)).val();
+            const username = user.username;
+            const timestamp = Date.now();
+            const timestampReversed = timestamp * -1;
+            const activity = {
+                archived: false,
+                channel_id: channelId,
+                created_at: timestamp,
+                created_at_desc: timestampReversed,
+                modified_at: timestamp,
+                text: `#${channelName} @${username}: invite sent to ${invite.email}.`,
+            };
+            const memberIds = [invite.inviter.id];
+            for (const memberId of memberIds) {
+                yield shared.database.ref().child(`activity/${memberId}`).push().set(activity);
+            }
+        }
+        catch (err) {
+            console.error('Error creating activity: ', err);
+            return;
         }
     });
 }

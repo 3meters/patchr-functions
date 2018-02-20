@@ -5,6 +5,13 @@ path / {
     read() { isWorker() }
     write() { isWorker() }
 }
+path /activity/{userId} {
+    read() { isCurrentUser(userId) }
+    write() { isCurrentUser(userId) }
+}
+path /activity/{userId}/{activityId} is Activity {
+    write() { isCurrentUser(userId) }
+}
 path /clients is Clients {
     read() { true }     // We don't need a logged in user to check the client requirements
     write() { false }   // Update using firebase console
@@ -67,6 +74,14 @@ path /channel-messages/{channelId}/{messageId} is Message {
     delete() { 
         isLoggedIn() && 
         (isCreatorOf(this) || isChannelOwner(channelId, auth.uid))}    
+}
+path /channel-messages/{channelId}/{messageId}/comments/{commentId} is Comment {
+    write() {
+        isLoggedIn() && isChannelMember(channelId, auth.uid)}
+}
+path /channel-messages/{channelId}/{messageId}/comments/{commentId}/reactions is Reactions {
+    write() {
+        isLoggedIn() && isChannelMember(channelId, auth.uid)}
 }
 path /channel-messages/{channelId}/{messageId}/reactions is Reactions {
     write() {
@@ -277,6 +292,16 @@ type Profile {
     phone: ValueString|Null,
     photo: Photo|Null
 }
+type Activity {
+    archived: Boolean,
+    channel_id: PatchrKey,
+    created_at: Timestamp,
+    created_at_desc: TimestampInverted,
+    created_by: UserKey,
+    modified_at: Timestamp,
+    modified_by: UserKey,
+    text: BodyString|Null 
+}
 type Clients {
     ios: Number
 }
@@ -307,6 +332,16 @@ type ChannelMember {
     role: ChannelRole,          
     starred: Boolean,
 }
+type Comment {
+    channel_id: PatchrKey,
+    created_at: Timestamp,
+    created_at_desc: TimestampInverted,
+    created_by: UserKey,
+    message_id: AutoKey,
+    modified_at: Timestamp,
+    modified_by: UserKey,
+    text: BodyString|Null 
+}
 type Invite {
     channel: InviteChannel,
     created_at: Timestamp,
@@ -331,7 +366,6 @@ type Inviter {
 type Message {
     attachments: Map<PatchrKey, Attachment>|Null,
     channel_id: PatchrKey,
-    comment_count: Number|Null,
     created_at: Timestamp,
     created_at_desc: TimestampInverted,
     created_by: UserKey,

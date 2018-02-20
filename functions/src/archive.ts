@@ -121,13 +121,9 @@ function startTaskListeners() {
 
 function createUser(task) {
   let user = {
-    created_at: {
-      '.sv': 'timestamp'
-    },
+    created_at: {'.sv': 'timestamp'},
     created_by: task.created_by,
-    modified_at: {
-      '.sv': 'timestamp'
-    },
+    modified_at: {'.sv': 'timestamp'},
     username: task.username,
   }
 

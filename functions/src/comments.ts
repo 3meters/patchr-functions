@@ -20,30 +20,20 @@ async function created(current: shared.DeltaSnapshot) {
   const messageId: string = comment.message_id
   console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId} by: ${comment.created_by}`)
 
-  /* Increment comment counter on message */
-  try {
-    const countRef = shared.database.ref(`/channel-messages/${channelId}/${messageId}/comment_count`)
-    await countRef.transaction((cur) => {
-      return (cur || 0) + 1
-    })
-  } 
-  catch (err) {
-    console.error(`Error changing comment count: ${err.message}`)
-  }
-
   /* Flag unread and tickle activity for message creator */
-  const notifyId: string = (await shared.getMessage(channelId, messageId)).val().created_by
-  if (notifyId === comment.created_by) { return } // Don't notify if self commenting.
+  const notifyId: string = (await shared.getMessageCreatedBy(channelId, messageId))
+  if (notifyId === comment.created_by) { return } // Don't do anything if self commenting.
 
   try {
     const updates = {}
+    const timestamp = Date.now()
+    const timestampReversed = timestamp * -1
     updates[`unreads/${notifyId}/${channelId}/${messageId}/comments/${commentId}`] = true
-    updates[`channel-members/${channelId}/${notifyId}/activity_at`] = comment.created_at
-    updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = comment.created_at_desc
-    updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by    
+    updates[`channel-members/${channelId}/${notifyId}/activity_at`] = timestamp
+    updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = timestampReversed
+    updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by
     await shared.database.ref().update(updates)
-  }
-  catch (err) {
+  } catch (err) {
     console.error('Error updating unreads and sort priority: ', err)
     return
   }
@@ -71,13 +61,11 @@ async function created(current: shared.DeltaSnapshot) {
     if (language === 'en') {
       const notificationText: string = `#${channelName} @${username}: commented on a post: ${comment.text}`
       await notifications.sendMessages(installs, notificationText, data)
-    }
-    else if (language === 'ru') {
+    } else if (language === 'ru') {
       const notificationText: string = `#${channelName} @${username}: прокомментировал(а) публикацию: ${comment.text}`
       await notifications.sendMessages(installs, notificationText, data)
     }
-  } 
-  catch (err) {
+  } catch (err) {
     console.error('Error processing new comment notifications: ', err)
     return
   }

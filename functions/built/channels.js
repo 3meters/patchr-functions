@@ -13,16 +13,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const shared = require("./shared");
 const Action = shared.Action;
+let memberIds;
+let channelName;
 function onWriteChannel(event) {
     return __awaiter(this, void 0, void 0, function* () {
         if (shared.getAction(event) === Action.create) {
             yield created(event.data.current);
-        }
-        else if (shared.getAction(event) === Action.delete) {
-            yield deleted(event.data.previous);
+            yield log(Action.create, event.params, event.data);
         }
         else if (shared.getAction(event) === Action.change) {
             yield updated(event.data.previous, event.data.current);
+            yield log(Action.change, event.params, event.data);
+        }
+        else if (shared.getAction(event) === Action.delete) {
+            yield deleted(event.data.previous);
+            yield log(Action.delete, event.params, event.data);
         }
     });
 }
@@ -69,17 +74,16 @@ function deleted(previous) {
         const channelId = previous.key;
         const photo = previous.val().photo;
         const updates = {};
-        console.log(`Channel deleted: ${channelId}`);
+        channelName = previous.val().name;
+        console.log(`Channel deleted: ${channelId}`, previous.val().name);
+        /* Gather list of channel members */
+        memberIds = yield shared.getMemberIds(channelId);
+        for (const memberId of memberIds) {
+            updates[`member-channels/${memberId}/${channelId}`] = null;
+            updates[`unreads/${memberId}/${channelId}`] = null;
+        }
         updates[`channel-messages/${channelId}`] = null;
         updates[`channel-members/${channelId}`] = null;
-        /* Gather list of channel members */
-        const memberIds = yield shared.getMemberIds(channelId);
-        if (memberIds.length !== 0) {
-            memberIds.forEach((memberId) => {
-                updates[`member-channels/${memberId}/${channelId}`] = null;
-                updates[`unreads/${memberId}/${channelId}`] = null;
-            });
-        }
         /* Submit updates */
         yield shared.database.ref().update(updates);
         /* Delete image file if needed */
@@ -88,6 +92,71 @@ function deleted(previous) {
                 console.log(`Deleting image file: ${photo.filename}`);
                 yield shared.deleteImageFile(photo.filename);
             }
+        }
+    });
+}
+function log(action, params, snapshot) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /* Gather channel members */
+        const channelId = params.channelId;
+        let userId = '';
+        if (snapshot.exists()) {
+            userId = snapshot.val().owned_by;
+        }
+        else if (snapshot.previous.exists()) {
+            userId = snapshot.previous.val().owned_by;
+        }
+        if (!memberIds) {
+            memberIds = yield shared.getMemberIds(channelId);
+            if (memberIds.length === 0) {
+                return;
+            }
+        }
+        /* Activity */
+        try {
+            if (!channelName) {
+                channelName = (yield shared.getChannel(channelId)).val().name;
+            }
+            const user = (yield shared.getUser(userId)).val();
+            const username = user.username;
+            const timestamp = Date.now();
+            const timestampReversed = timestamp * -1;
+            const activity = {
+                archived: false,
+                channel_id: channelId,
+                created_at: timestamp,
+                created_at_desc: timestampReversed,
+                modified_at: timestamp,
+                text: 'empty',
+            };
+            if (action === Action.create) {
+                activity.text = `#${channelName} @${username}: created scrapbook.`;
+            }
+            else if (action === Action.change) {
+                const previousPhoto = snapshot.previous.val().photo;
+                const currentPhoto = snapshot.val().photo;
+                if (previousPhoto) {
+                    if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
+                        activity.text = `#${channelName} @${username}: changed cover photo.`;
+                    }
+                }
+                else if (currentPhoto) {
+                    activity.text = `#${channelName} @${username}: added cover photo.`;
+                }
+            }
+            else if (action === Action.delete) {
+                memberIds = [snapshot.previous.val().owned_by];
+                activity.text = `#${channelName} @${username}: deleted scrapbook.`;
+            }
+            if (activity.text !== 'empty') {
+                for (const memberId of memberIds) {
+                    yield shared.database.ref().child(`activity/${memberId}`).push().set(activity);
+                }
+            }
+        }
+        catch (err) {
+            console.error('Error creating activity: ', err);
+            return;
         }
     });
 }

@@ -5,6 +5,7 @@ import * as channels from './channels'
 import * as comments from './comments'
 import * as invites from './invites'
 import * as messages from './messages'
+import * as reactions from './reactions'
 import * as shared from './shared'
 import * as unreads from './unreads'
 import * as users from './users'
@@ -23,8 +24,13 @@ export let onWriteChannel = functions
 
 export let onCreateComment = functions
   .database
-  .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+  .ref('/channel-messages/{channelId}/{messageId}/comments/{commentId}')
   .onCreate(async (event) => await comments.onWriteComment(event))
+
+export let onCreateReaction = functions
+  .database
+  .ref('/channel-messages/{channelId}/{messageId}/reactions/{reactionId}')
+  .onCreate(async (event) => await reactions.onWriteReaction(event))
 
 export let onCreateMessageUnread = functions
   .database

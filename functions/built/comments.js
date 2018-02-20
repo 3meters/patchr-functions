@@ -29,26 +29,18 @@ function created(current) {
         const channelId = comment.channel_id;
         const messageId = comment.message_id;
         console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId} by: ${comment.created_by}`);
-        /* Increment comment counter on message */
-        try {
-            const countRef = shared.database.ref(`/channel-messages/${channelId}/${messageId}/comment_count`);
-            yield countRef.transaction((cur) => {
-                return (cur || 0) + 1;
-            });
-        }
-        catch (err) {
-            console.error(`Error changing comment count: ${err.message}`);
-        }
         /* Flag unread and tickle activity for message creator */
-        const notifyId = (yield shared.getMessage(channelId, messageId)).val().created_by;
+        const notifyId = (yield shared.getMessageCreatedBy(channelId, messageId));
         if (notifyId === comment.created_by) {
             return;
-        } // Don't notify if self commenting.
+        } // Don't do anything if self commenting.
         try {
             const updates = {};
+            const timestamp = Date.now();
+            const timestampReversed = timestamp * -1;
             updates[`unreads/${notifyId}/${channelId}/${messageId}/comments/${commentId}`] = true;
-            updates[`channel-members/${channelId}/${notifyId}/activity_at`] = comment.created_at;
-            updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = comment.created_at_desc;
+            updates[`channel-members/${channelId}/${notifyId}/activity_at`] = timestamp;
+            updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = timestampReversed;
             updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by;
             yield shared.database.ref().update(updates);
         }

@@ -15,6 +15,7 @@ const channels = require("./channels");
 const comments = require("./comments");
 const invites = require("./invites");
 const messages = require("./messages");
+const reactions = require("./reactions");
 const unreads = require("./unreads");
 const users = require("./users");
 // /* Exports */
@@ -28,8 +29,12 @@ exports.onWriteChannel = functions
     .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield channels.onWriteChannel(event); }));
 exports.onCreateComment = functions
     .database
-    .ref('/message-comments/{channelId}/{messageId}/{commentId}')
+    .ref('/channel-messages/{channelId}/{messageId}/comments/{commentId}')
     .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
+exports.onCreateReaction = functions
+    .database
+    .ref('/channel-messages/{channelId}/{messageId}/reactions/{reactionId}')
+    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield reactions.onWriteReaction(event); }));
 exports.onCreateMessageUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}/message')

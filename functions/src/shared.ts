@@ -23,7 +23,7 @@ export const auth: admin.auth.Auth = admin.auth()
 const gcs = require('@google-cloud/storage')()
 
 export function slugify(title: string) {
-  return slugifyjs(title)
+  return slugifyjs(title).toLowerCase()
 }
 
 export async function getMemberIds(channelId: string | null) {
@@ -97,6 +97,20 @@ export async function getMessage(channelId: string, messageId: string) {
     .ref(`channel-messages/${channelId}/${messageId}`)
     .once('value')
   return value
+}
+
+export async function getMessageCreatedBy(channelId: string, messageId: string) {
+  const value: DataSnapshot = await database
+    .ref(`channel-messages/${channelId}/${messageId}`)
+    .once('value')
+  return value.val().created_by
+}
+
+export async function getChannelOwnerId(channelId: string) {
+  const value: DataSnapshot = await database
+    .ref(`channels/${channelId}`)
+    .once('value')
+  return value.val().owned_by
 }
 
 export function getPhotoFromMessage(message: any) {

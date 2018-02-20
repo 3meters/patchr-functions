@@ -21,7 +21,7 @@ exports.auth = admin.auth();
 // tslint:disable-next-line:no-var-requires
 const gcs = require('@google-cloud/storage')();
 function slugify(title) {
-    return slugifyjs(title);
+    return slugifyjs(title).toLowerCase();
 }
 exports.slugify = slugify;
 function getMemberIds(channelId) {
@@ -117,6 +117,24 @@ function getMessage(channelId, messageId) {
     });
 }
 exports.getMessage = getMessage;
+function getMessageCreatedBy(channelId, messageId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const value = yield exports.database
+            .ref(`channel-messages/${channelId}/${messageId}`)
+            .once('value');
+        return value.val().created_by;
+    });
+}
+exports.getMessageCreatedBy = getMessageCreatedBy;
+function getChannelOwnerId(channelId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const value = yield exports.database
+            .ref(`channels/${channelId}`)
+            .once('value');
+        return value.val().owned_by;
+    });
+}
+exports.getChannelOwnerId = getChannelOwnerId;
 function getPhotoFromMessage(message) {
     if (message.attachments) {
         for (const prop in message.attachments) {

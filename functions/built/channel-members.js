@@ -20,12 +20,15 @@ function onWriteMember(event) {
         }
         if (shared.getAction(event) === Action.create) {
             yield created(event.params, event.data.current);
+            yield log(Action.create, event.params, event.data.previous, event.data.current);
         }
         else if (shared.getAction(event) === Action.delete) {
             yield deleted(event.params, event.data.previous);
+            yield log(Action.delete, event.params, event.data.previous, event.data.current);
         }
         else if (shared.getAction(event) === Action.change) {
             yield updated(event.params, event.data.previous, event.data.current);
+            yield log(Action.change, event.params, event.data.previous, event.data.current);
         }
     });
 }
@@ -66,6 +69,56 @@ function deleted(params, previous) {
         }
         catch (err) {
             console.error('Error removing channel member: ', err);
+            return;
+        }
+    });
+}
+function log(action, params, previous, current) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /* Gather channel members */
+        const channelId = params.channelId;
+        const userId = params.userId;
+        const memberIds = yield shared.getMemberIds(channelId);
+        if (memberIds.length === 0) {
+            return;
+        }
+        /* Activity */
+        try {
+            const channelName = (yield shared.getChannel(channelId)).val().name;
+            const user = (yield shared.getUser(userId)).val();
+            const username = user.username;
+            const timestamp = Date.now();
+            const timestampReversed = timestamp * -1;
+            const activity = {
+                archived: false,
+                channel_id: channelId,
+                created_at: timestamp,
+                created_at_desc: timestampReversed,
+                modified_at: timestamp,
+                text: 'empty',
+            };
+            if (action === Action.create) {
+                const membership = current.val();
+                activity.text = `#${channelName} @${username}: joined as ${membership.role}.`;
+            }
+            else if (action === Action.change) {
+                const membershipCur = current.val();
+                const membershipPrev = previous.val();
+                if (membershipCur.role !== membershipPrev.role) {
+                    activity.text = `#${channelName} @${username}: assigned as ${membershipCur.role}.`;
+                }
+            }
+            else if (action === Action.delete) {
+                activity.text = `#${channelName} @${username}: left the scrapbook.`;
+            }
+            if (activity.text !== 'empty') {
+                for (const memberId of memberIds) {
+                    yield shared.database.ref().child(`activity/${memberId}`).push().set(activity);
+                }
+            }
+        }
+        catch (err) {
+            console.error('Error creating activity: ', err);
             return;
         }
     });

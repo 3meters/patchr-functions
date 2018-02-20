@@ -37,6 +37,8 @@ function onDeleteAccount(event) {
                 updates[`channel-members/${channelId}/${userId}`] = null;
             });
         }
+        /* Remove activity */
+        updates[`activity/${userId}`] = null;
         yield shared.database.ref().update(updates);
     });
 }

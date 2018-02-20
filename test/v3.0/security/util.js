@@ -13,7 +13,6 @@ exports.generateData = function generateData(exclude) {
   if (!exclusions.installs) addInstalls(data)
   if (!exclusions.invites) addInvites(data)
   if (!exclusions.memberChannels) addMemberChannels(data)
-  if (!exclusions.messageComments) addMessageComments(data)
   if (!exclusions.tasks) addTasks(data)
   if (!exclusions.unreads) addUnreads(data)
   if (!exclusions.usernames) addUsernames(data)
@@ -186,7 +185,19 @@ function addChannelMessages(data) {
         "created_by": "us-tarzanxxx",
         "modified_at": 1444526248033,
         "modified_by": "us-tarzanxxx",
-        "text": "Hey, what do guy do to get banana?"
+        "text": "Hey, what do guy do to get banana?",
+        "comments": {
+          "co-commentx1": {
+            "channel_id": "ch-generalxx",
+            "created_at": 1444526248003,
+            "created_at_desc": -1444526248003,
+            "created_by": "us-janexxxxx",
+            "message_id": "me-messagex1",
+            "modified_at": 1444526248033,
+            "modified_by": "us-janexxxxx",
+            "text": "Reach up and shake branch dummy."
+          }
+        }
       }
     },
     "ch-privatexx": {
@@ -201,6 +212,18 @@ function addChannelMessages(data) {
         "reactions": {
           ":thumbsup:": {
             "us-maryxxxxx": true
+          }
+        },
+        "comments": {
+          "co-commentx1": {
+            "channel_id": "ch-privatexx",
+            "created_at": 1444526248003,
+            "created_at_desc": -1444526248003,
+            "created_by": "us-maryxxxxx",
+            "message_id": "me-messagex1",
+            "modified_at": 1444526248033,
+            "modified_by": "us-maryxxxxx",
+            "text": "I will make sure Cheeta is out for the night."
           }
         }
       }
@@ -340,40 +363,6 @@ function addMemberChannels(data) {
         "starred": false
       }
     }
-  }
-  return data
-}
-
-function addMessageComments(data) {
-  data["message-comments"] = {
-    "ch-generalxx": {
-      "me-messagex1": {
-        "co-commentx1": {
-          "channel_id": "ch-generalxx",
-          "created_at": 1444526248003,
-          "created_at_desc": -1444526248003,
-          "created_by": "us-janexxxxx",
-          "message_id": "me-messagex1",
-          "modified_at": 1444526248033,
-          "modified_by": "us-janexxxxx",
-          "text": "Reach up and shake branch dummy."
-        }
-      }
-    },
-    "ch-privatexx": {
-      "me-messagex1": {
-        "co-commentx1": {
-          "channel_id": "ch-privatexx",
-          "created_at": 1444526248003,
-          "created_at_desc": -1444526248003,
-          "created_by": "us-maryxxxxx",
-          "message_id": "me-messagex1",
-          "modified_at": 1444526248033,
-          "modified_by": "us-maryxxxxx",
-          "text": "I will make sure Cheeta is out for the night."
-        }
-      }
-    },
   }
   return data
 }

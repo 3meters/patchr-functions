@@ -33,5 +33,8 @@ export async function onDeleteAccount(event: shared.AuthEvent) {
     })
   }
 
+  /* Remove activity */
+  updates[`activity/${userId}`] = null
+  
   await shared.database.ref().update(updates)
 }

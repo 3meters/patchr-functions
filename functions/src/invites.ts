@@ -12,7 +12,7 @@ export async function onWriteInvite(event: shared.DatabaseEvent) {
   if (!event.params) { return }
   if (shared.getAction(event) === Action.create) {
     await created(event.data.current)
-  } 
+  }
 }
 
 async function created(current: shared.DeltaSnapshot) {
@@ -21,8 +21,8 @@ async function created(current: shared.DeltaSnapshot) {
   try {
     invite.id = current.key
     await sendInviteEmail(invite)
-  } 
-  catch (err) {
+    await log(invite)
+  } catch (err) {
     console.error(`Error sending invite email: ${err}`)
   }
 }
@@ -35,18 +35,16 @@ async function sendInviteEmail(invite: any) {
   const language = invite.language
   let templateId = invite.message ? '20036bc8-5a3c-4df2-8c3c-ee99df3b047f' : 'de969f30-f3a0-4aa3-8f91-9d349831f0f9'
   let role = (invite.role === 'editor') ? 'contributor' : invite.role
-  
+
   if (language) {
     if (language === 'ru') {
       /* Switch to russian templates when available */
       templateId = invite.message ? '2148f65c-535f-4db4-bf8c-ea18b7fb1917' : '61608101-327d-44c3-9622-def58a1c6a44'
       if (role === 'reader') {
         role = 'Читатель'
-      }
-      else if (role === 'contributor') {
+      } else if (role === 'contributor') {
         role = 'Соавтор'
-      }
-      else if (role === 'owner') {
+      } else if (role === 'owner') {
         role = 'Владелец'
       }
     }
@@ -63,7 +61,7 @@ async function sendInviteEmail(invite: any) {
   personalization.addSubstitution(new helper.Substitution('-link-', invite.link))
 
   if (invite.message) {
-    personalization.addSubstitution(new helper.Substitution('-message-', invite.message))    
+    personalization.addSubstitution(new helper.Substitution('-message-', invite.message))
   }
 
   mail.addPersonalization(personalization)
@@ -92,5 +90,34 @@ async function sendInviteEmail(invite: any) {
       console.error(`SendGrid: error in SendGrid system: ${statusCode}`)
       throw new Error(`SendGrid: error in SendGrid system: ${statusCode}`)
     }
+  }
+}
+
+async function log(invite: any) {
+
+  /* Activity */
+  try {
+    const channelId = invite.channel.id
+    const channelName = shared.slugify(invite.channel.title)
+    const user: any = (await shared.getUser(invite.inviter.id)).val()
+    const username: string = user.username
+    const timestamp = Date.now()
+    const timestampReversed = timestamp * -1
+    const activity = {
+      archived: false,
+      channel_id: channelId,
+      created_at: timestamp,
+      created_at_desc: timestampReversed,
+      modified_at: timestamp,
+      text: `#${channelName} @${username}: invite sent to ${invite.email}.`,
+    }
+
+    const memberIds = [invite.inviter.id]
+    for (const memberId of memberIds) {
+      await shared.database.ref().child(`activity/${memberId}`).push().set(activity)
+    }
+  } catch (err) {
+    console.error('Error creating activity: ', err)
+    return
   }
 }

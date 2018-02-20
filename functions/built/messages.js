@@ -57,13 +57,15 @@ function created(current) {
         /* Flag unread, tickle activity */
         try {
             const updates = {};
+            const timestamp = Date.now();
+            const timestampReversed = timestamp * -1;
             for (const userId of notifyIds) {
                 updates[`unreads/${userId}/${channelId}/${messageId}/message`] = true;
-                updates[`member-channels/${userId}/${channelId}/activity_at`] = message.created_at;
-                updates[`member-channels/${userId}/${channelId}/activity_at_desc`] = message.created_at_desc;
+                updates[`member-channels/${userId}/${channelId}/activity_at`] = timestamp;
+                updates[`member-channels/${userId}/${channelId}/activity_at_desc`] = timestampReversed;
                 updates[`member-channels/${userId}/${channelId}/activity_by`] = createdBy;
-                updates[`channel-members/${channelId}/${userId}/activity_at`] = message.created_at;
-                updates[`channel-members/${channelId}/${userId}/activity_at_desc`] = message.created_at_desc;
+                updates[`channel-members/${channelId}/${userId}/activity_at`] = timestamp;
+                updates[`channel-members/${channelId}/${userId}/activity_at_desc`] = timestampReversed;
                 updates[`channel-members/${channelId}/${userId}/activity_by`] = createdBy;
             }
             yield shared.database.ref().update(updates);
@@ -170,28 +172,4 @@ function deleted(previous) {
         }
     });
 }
-function onWriteCommentsCounter(event) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (shared.getAction(event) !== Action.delete) {
-            return;
-        }
-        if (!event.params) {
-            return;
-        }
-        const channelId = event.params.channelId;
-        const messageId = event.params.messageId;
-        const countRef = shared.database.ref(`/channel-messages/${channelId}/${messageId}/comment_count`);
-        const commentsRef = shared.database.ref(`/message-comments/${channelId}/${messageId}`);
-        try {
-            const comments = yield commentsRef.once('value');
-            const count = comments.numChildren();
-            yield countRef.set(count);
-            console.log(`Recounting comments for ${messageId} total ${count}`);
-        }
-        catch (err) {
-            console.error(`Error counting comments: ${err.message}`);
-        }
-    });
-}
-exports.onWriteCommentsCounter = onWriteCommentsCounter;
 //# sourceMappingURL=messages.js.map

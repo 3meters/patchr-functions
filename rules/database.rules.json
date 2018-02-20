@@ -2,6 +2,43 @@
   "rules": {
     ".read": "auth != null && auth.uid == 'patchr-cloud-worker'",
     ".write": "auth != null && auth.uid == 'patchr-cloud-worker'",
+    "activity": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId",
+        "$activityId": {
+          ".validate": "newData.hasChildren(['archived', 'channel_id', 'created_at', 'created_at_desc', 'created_by', 'modified_at', 'modified_by'])",
+          "archived": {
+            ".validate": "newData.isBoolean()"
+          },
+          "channel_id": {
+            ".validate": "newData.isString() && newData.val().length == 12"
+          },
+          "created_at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+          },
+          "created_at_desc": {
+            ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
+          },
+          "created_by": {
+            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+          },
+          "modified_at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+          },
+          "modified_by": {
+            ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "$other": {
+            ".validate": "false"
+          },
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    },
     "clients": {
       ".validate": "newData.hasChildren(['ios'])",
       "ios": {
@@ -180,9 +217,6 @@
           "channel_id": {
             ".validate": "newData.isString() && newData.val().length == 12"
           },
-          "comment_count": {
-            ".validate": "newData.isNumber()"
-          },
           "created_at": {
             ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
           },
@@ -220,7 +254,50 @@
           "$other": {
             ".validate": "false"
           },
-          ".write": "data.val() == null && auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null && (root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner' || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'editor') || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))"
+          ".write": "data.val() == null && auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null && (root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner' || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'editor') || data.val() != null && newData.val() != null && auth != null && data.child('created_by').val() == auth.uid || data.val() != null && newData.val() == null && auth != null && (data.child('created_by').val() == auth.uid || (root.child('channels').child($channelId).child('owned_by').val() == auth.uid || root.child('channel-members').child($channelId).child(auth.uid).val() != null && root.child('channel-members').child($channelId).child(auth.uid).child('role').val() == 'owner'))",
+          "comments": {
+            "$commentId": {
+              ".validate": "newData.hasChildren(['channel_id', 'created_at', 'created_at_desc', 'created_by', 'message_id', 'modified_at', 'modified_by'])",
+              "channel_id": {
+                ".validate": "newData.isString() && newData.val().length == 12"
+              },
+              "created_at": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+              },
+              "created_at_desc": {
+                ".validate": "newData.isNumber() && newData.val() >= -(now + 3600000)"
+              },
+              "created_by": {
+                ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+              },
+              "message_id": {
+                ".validate": "newData.isString() && newData.val().length == 20"
+              },
+              "modified_at": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
+              },
+              "modified_by": {
+                ".validate": "newData.isString() && (newData.val().length == 28 || newData.val().length == 12)"
+              },
+              "text": {
+                ".validate": "newData.isString() && newData.val().length <= 4000"
+              },
+              "$other": {
+                ".validate": "false"
+              },
+              ".write": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null",
+              "reactions": {
+                "$key3": {
+                  ".validate": "newData.hasChildren() && ($key3 == ':thumbsup:' || $key3 == ':thumbsdown:' || $key3 == ':grinning:' || $key3 == ':tada:' || $key3 == ':clap:' || $key3 == ':100:' || $key3 == ':poop:' || $key3 == ':confused:' || $key3 == ':heart:' || $key3 == ':smiley_cat:' || $key3 == ':smiling_imp:' || $key3 == ':muscle:' || $key3 == ':zzz:' || $key3 == ':cocktail:' || $key3 == ':trophy:' || $key3 == ':fireworks:' || $key3 == ':gift:' || $key3 == ':astonished:' || $key3 == ':drooling_face:' || $key3 == ':sleeping:' || $key3 == ':yum:' || $key3 == ':laughing:' || $key3 == ':heart_eyes:' || $key3 == ':bulb:')",
+                  "$key4": {
+                    ".validate": "($key4.length == 28 || $key4.length == 12) && newData.isBoolean()"
+                  }
+                },
+                ".validate": "newData.hasChildren()",
+                ".write": "auth != null && root.child('channel-members').child($channelId).child(auth.uid).val() != null"
+              }
+            }
+          }
         },
         ".indexOn": [
           "attachments"
@@ -388,9 +465,6 @@
             },
             "channel_id": {
               ".validate": "newData.isString() && newData.val().length == 12"
-            },
-            "comment_count": {
-              ".validate": "newData.isNumber()"
             },
             "created_at": {
               ".validate": "newData.isNumber() && newData.val() <= now + 3600000"
