@@ -13,12 +13,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const notifications = require("./notifications");
 const shared = require("./shared");
-const Action = shared.Action;
-function onWriteComment(event) {
+function onWriteComment(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (shared.getAction(event) === Action.create) {
-            yield created(event.data.current);
-        }
+        yield created(data);
     });
 }
 exports.onWriteComment = onWriteComment;
@@ -28,20 +25,34 @@ function created(current) {
         const commentId = current.key;
         const channelId = comment.channel_id;
         const messageId = comment.message_id;
-        console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId} by: ${comment.created_by}`);
-        /* Flag unread and tickle activity for message creator */
-        const notifyId = (yield shared.getMessageCreatedBy(channelId, messageId));
-        if (notifyId === comment.created_by) {
+        const commentCreatedBy = comment.created_by;
+        const commentUser = (yield shared.getUser(commentCreatedBy)).val();
+        const commentUsername = commentUser.username;
+        console.log(`Comment created: ${commentId} for: ${messageId} channel: ${channelId} by: ${commentCreatedBy}`);
+        /* Send comment notifications to all channel members except comment creator */
+        /* Gather channel members except muted or author */
+        const createdBy = (yield shared.getMessageCreatedBy(channelId, messageId));
+        const notifyIds = yield shared.getMemberIdsToNotify(channelId, [createdBy]);
+        if (notifyIds.length === 0) {
             return;
-        } // Don't do anything if self commenting.
+        }
+        const members = [];
+        for (const notifyId of notifyIds) {
+            const user = (yield shared.getUser(notifyId)).val();
+            const language = user.profile.language ? user.profile.language : 'en';
+            members.push({ id: notifyId, language: language });
+        }
+        /* Flag unread and tickle activity for channel members */
         try {
             const updates = {};
             const timestamp = Date.now();
             const timestampReversed = timestamp * -1;
-            updates[`unreads/${notifyId}/${channelId}/${messageId}/comments/${commentId}`] = true;
-            updates[`channel-members/${channelId}/${notifyId}/activity_at`] = timestamp;
-            updates[`channel-members/${channelId}/${notifyId}/activity_at_desc`] = timestampReversed;
-            updates[`channel-members/${channelId}/${notifyId}/activity_by`] = comment.created_by;
+            for (const userId of notifyIds) {
+                updates[`unreads/${userId}/${channelId}/${messageId}/comments/${commentId}`] = true;
+                updates[`channel-members/${channelId}/${userId}/activity_at`] = timestamp;
+                updates[`channel-members/${channelId}/${userId}/activity_at_desc`] = timestampReversed;
+                updates[`channel-members/${channelId}/${userId}/activity_by`] = commentCreatedBy;
+            }
             yield shared.database.ref().update(updates);
         }
         catch (err) {
@@ -51,29 +62,31 @@ function created(current) {
         /* Notify */
         try {
             /* Gather installs */
-            const installs = [];
+            const installs = { en: [], ru: [] };
             const promises = [];
-            promises.push(notifications.gatherInstalls(notifyId, installs));
+            for (const member of members) {
+                promises.push(notifications.gatherInstalls(member.id, installs[member.language]));
+            }
             yield Promise.all(promises);
-            if (installs.length === 0) {
+            if (installs.en.length === 0 && installs.ru.length === 0) {
                 return;
             }
+            console.log(`Installs to notify: en = ${installs.en.length}, ru = ${installs.ru.length}`);
             const channelName = (yield shared.getChannel(channelId)).val().name;
-            const user = (yield shared.getUser(notifyId)).val();
-            const username = user.username;
-            const language = user.profile.language ? user.profile.language : 'en';
             const data = {
-                user_id: comment.created_by,
+                user_id: commentCreatedBy,
                 channel_id: channelId,
                 message_id: messageId,
             };
-            if (language === 'en') {
-                const notificationText = `#${channelName} @${username}: commented on a post: ${comment.text}`;
-                yield notifications.sendMessages(installs, notificationText, data);
+            /* English */
+            if (installs.en.length > 0) {
+                const notificationText = `#${channelName} @${commentUsername}: commented on a post: ${comment.text}`;
+                yield notifications.sendMessages(installs.en, notificationText, data);
             }
-            else if (language === 'ru') {
-                const notificationText = `#${channelName} @${username}: прокомментировал(а) публикацию: ${comment.text}`;
-                yield notifications.sendMessages(installs, notificationText, data);
+            /* Russian */
+            if (installs.ru.length > 0) {
+                const notificationText = `#${channelName} @${commentUsername}: прокомментировал(а) публикацию: ${comment.text}`;
+                yield notifications.sendMessages(installs.ru, notificationText, data);
             }
         }
         catch (err) {

@@ -13,22 +13,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const shared = require("./shared");
 const Action = shared.Action;
-function onWriteMember(event) {
+function onWriteMember(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!event.params) {
+        if (!context.params) {
             return;
         }
-        if (shared.getAction(event) === Action.create) {
-            yield created(event.params, event.data.current);
-            yield log(Action.create, event.params, event.data.previous, event.data.current);
+        if (shared.getAction(data) === Action.create) {
+            yield created(context.params, data.after);
+            yield log(Action.create, context.params, data.before, data.after);
         }
-        else if (shared.getAction(event) === Action.delete) {
-            yield deleted(event.params, event.data.previous);
-            yield log(Action.delete, event.params, event.data.previous, event.data.current);
+        else if (shared.getAction(data) === Action.delete) {
+            yield deleted(context.params, data.before);
+            yield log(Action.delete, context.params, data.before, data.after);
         }
-        else if (shared.getAction(event) === Action.change) {
-            yield updated(event.params, event.data.previous, event.data.current);
-            yield log(Action.change, event.params, event.data.previous, event.data.current);
+        else if (shared.getAction(data) === Action.change) {
+            yield updated(context.params, data.before, data.after);
+            yield log(Action.change, context.params, data.before, data.after);
         }
     });
 }

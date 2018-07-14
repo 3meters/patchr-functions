@@ -6,7 +6,6 @@ import * as comments from './comments'
 import * as invites from './invites'
 import * as messages from './messages'
 import * as reactions from './reactions'
-import * as shared from './shared'
 import * as unreads from './unreads'
 import * as users from './users'
 
@@ -15,80 +14,80 @@ import * as users from './users'
 export let onWriteMessage = functions
   .database
   .ref('/channel-messages/{channelId}/{messageId}')
-  .onWrite(async (event) => await messages.onWriteMessage(event))
+  .onWrite(async (data, context) => await messages.onWriteMessage(data, context))
 
 export let onWriteChannel = functions
   .database
   .ref('/channels/{channelId}')
-  .onWrite(async (event) => await channels.onWriteChannel(event))
+  .onWrite(async (data, context) => await channels.onWriteChannel(data, context))
 
 export let onCreateComment = functions
   .database
   .ref('/channel-messages/{channelId}/{messageId}/comments/{commentId}')
-  .onCreate(async (event) => await comments.onWriteComment(event))
+  .onCreate(async (data, context) => await comments.onWriteComment(data, context))
 
 export let onCreateReaction = functions
   .database
   .ref('/channel-messages/{channelId}/{messageId}/reactions/{reactionId}')
-  .onCreate(async (event) => await reactions.onWriteReaction(event))
+  .onCreate(async (data, context) => await reactions.onWriteReaction(data, context))
 
 export let onCreateMessageUnread = functions
   .database
   .ref('/unreads/{userId}/{channelId}/{messageId}/message')
-  .onCreate(async (event) => await unreads.onWriteUnread(event))
+  .onCreate(async (data, context) => await unreads.onWriteUnread(data, context))
 
 export let onDeleteMessageUnread = functions
   .database
   .ref('/unreads/{userId}/{channelId}/{messageId}/message')
-  .onDelete(async (event) => await unreads.onWriteUnread(event))
+  .onDelete(async (data, context) => await unreads.onDeleteUnread(data, context))
 
 export let onCreateCommentUnread = functions
   .database
   .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
-  .onCreate(async (event) => await unreads.onWriteUnread(event))
+  .onCreate(async (data, context) => await unreads.onWriteUnread(data, context))
 
 export let onDeleteCommentUnread = functions
   .database
   .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
-  .onDelete(async (event) => await unreads.onWriteUnread(event))
+  .onDelete(async (data, context) => await unreads.onDeleteUnread(data, context))
 
 export let onCreateInvite = functions
   .database
   .ref('/invites/{inviteId}')
-  .onCreate(async (event) => await invites.onWriteInvite(event))
+  .onCreate(async (data, context) => await invites.onWriteInvite(data, context))
 
 /* Membership */
 
 export let onWriteChannelMember = functions
   .database
   .ref('/channel-members/{channelId}/{userId}')
-  .onWrite(async (event) => await channel_members.onWriteMember(event))
+  .onWrite(async (data, context) => await channel_members.onWriteMember(data, context))
 
 /* Properties */
 
 export let onUpdateProfile = functions
   .database
   .ref('/users/{userId}/profile')
-  .onUpdate(async (event) => await users.onWriteProfile(event))
+  .onUpdate(async (data, context) => await users.onUpdateProfile(data, context))
 
 export let onDeleteProfile = functions
   .database
   .ref('/users/{userId}/profile')
-  .onDelete(async (event) => await users.onWriteProfile(event))
+  .onDelete(async (data, context) => await users.onDeleteProfile(data, context))
 
 export let onWriteUsername = functions
   .database
   .ref('/users/{userId}/username')
-  .onWrite(async (event) => await users.onWriteUsername(event))
+  .onWrite(async (data, context) => await users.onWriteUsername(data, context))
 
 export let onDeleteUnreadsCounter = functions
   .database
   .ref('/counters/{userId}/unreads')
-  .onDelete(async (event) => await unreads.onWriteUnreadsCounter(event))
+  .onDelete(async (data, context) => await unreads.onWriteUnreadsCounter(data, context))
 
 /* Auth accounts */
 
 export let onDeleteAccount = functions
   .auth
   .user()
-  .onDelete(async (event) => await accounts.onDeleteAccount(event))
+  .onDelete(async (user, context) => await accounts.onDeleteAccount(user, context))

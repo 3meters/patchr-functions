@@ -2,28 +2,27 @@
  * Message processing
  */
 import * as shared from './shared'
-import * as utils from './utils'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
-type DeltaSnapshot = shared.DeltaSnapshot
+type Change = shared.Change
 let memberIds: string[]
 let channelName: string
 
-export async function onWriteChannel(event: shared.DatabaseEvent) {
-  if (shared.getAction(event) === Action.create) {
-    await created(event.data.current)
-    await log(Action.create, event.params, event.data)
-  } else if (shared.getAction(event) === Action.change) {
-    await updated(event.data.previous, event.data.current)
-    await log(Action.change, event.params, event.data)
-  } else if (shared.getAction(event) === Action.delete) {
-    await deleted(event.data.previous)
-    await log(Action.delete, event.params, event.data)
+export async function onWriteChannel(data: Change, context) {
+  if (shared.getAction(data) === Action.create) {
+    await created(data.after)
+    await log(Action.create, context.params, data)
+  } else if (shared.getAction(data) === Action.change) {
+    await updated(data.before, data.after)
+    await log(Action.change, context.params, data)
+  } else if (shared.getAction(data) === Action.delete) {
+    await deleted(data.before)
+    await log(Action.delete, context.params, data)
   }
 }
 
-async function created(current: DeltaSnapshot) {
-  const channelId: string = current.key
+async function created(current: DataSnapshot) {
+  const channelId: string | null = current.key
   console.log(`Channel created: ${channelId}`)
 
   const userId: string = current.val().created_by
@@ -39,34 +38,34 @@ async function created(current: DeltaSnapshot) {
   await shared.database.ref().update(updates)
 }
 
-async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
-  const channelId: string = current.key
-  const previousPhoto: any = previous.val().photo
-  const currentPhoto: any = current.val().photo
+async function updated(before: DataSnapshot, current: DataSnapshot) {
+  const channelId: string | null = current.key
+  const photoBefore: any = before.val().photo
+  const photoAfter: any = current.val().photo
 
-  if (current.child('title').changed()) {
+  if (current.child('title') !== before.child('title')) {
     const slug: string = shared.slugify(current.val().title) // converts all intl chars to url legal chars
     const updates = {}
     updates[`channels/${channelId}/name`] = slug.toLowerCase()
     await shared.database.ref().update(updates)
   }
 
-  if (previousPhoto) {
-    if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
-      if (previousPhoto.source === 'google-storage') {
-        console.log(`Deleting image file: ${previousPhoto.filename}`)
-        await shared.deleteImageFile(previousPhoto.filename)
+  if (photoBefore) {
+    if (!photoAfter || photoBefore.filename !== photoAfter.filename) {
+      if (photoBefore.source === 'google-storage') {
+        console.log(`Deleting image file: ${photoBefore.filename}`)
+        await shared.deleteImageFile(photoBefore.filename)
       }
     }
   }
 }
 
-async function deleted(previous: DeltaSnapshot) {
-  const channelId: string = previous.key
-  const photo: any = previous.val().photo
+async function deleted(before: DataSnapshot) {
+  const channelId: string | null = before.key
+  const photo: any = before.val().photo
   const updates = {}
-  channelName = previous.val().name
-  console.log(`Channel deleted: ${channelId}`, previous.val().name)
+  channelName = before.val().name
+  console.log(`Channel deleted: ${channelId}`, before.val().name)
 
   /* Gather list of channel members */
   memberIds = await shared.getMemberIds(channelId)
@@ -89,15 +88,15 @@ async function deleted(previous: DeltaSnapshot) {
   }
 }
 
-async function log(action: any, params: any, snapshot: DeltaSnapshot) {
+async function log(action: any, params: any, snapshot: Change) {
 
   /* Gather channel members */
   const channelId = params.channelId
   let userId = ''
-  if (snapshot.exists()) {
-    userId = snapshot.val().owned_by
-  } else if (snapshot.previous.exists()) {
-    userId = snapshot.previous.val().owned_by
+  if (snapshot.after.exists()) {
+    userId = snapshot.after.val().owned_by
+  } else if (snapshot.before.exists()) {
+    userId = snapshot.before.val().owned_by
   }
 
   if (!memberIds) {
@@ -128,8 +127,8 @@ async function log(action: any, params: any, snapshot: DeltaSnapshot) {
     if (action === Action.create) {
       activity.text = `#${channelName} @${username}: created scrapbook.`
     } else if (action === Action.change) {
-      const previousPhoto: any = snapshot.previous.val().photo
-      const currentPhoto: any = snapshot.val().photo
+      const previousPhoto: any = snapshot.before.val().photo
+      const currentPhoto: any = snapshot.after.val().photo
       if (previousPhoto) {
         if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
           activity.text = `#${channelName} @${username}: changed cover photo.`
@@ -138,7 +137,7 @@ async function log(action: any, params: any, snapshot: DeltaSnapshot) {
         activity.text = `#${channelName} @${username}: added cover photo.`
       }
     } else if (action === Action.delete) {
-      memberIds = [snapshot.previous.val().owned_by]
+      memberIds = [snapshot.before.val().owned_by]
       activity.text = `#${channelName} @${username}: deleted scrapbook.`
     }
     if (activity.text !== 'empty') {

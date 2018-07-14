@@ -2,31 +2,40 @@
  * User processing
  */
 import * as shared from './shared'
-const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
 
-export async function onWriteUnread(event: shared.DatabaseEvent) {
-  if (!event.params) { return }
-  const userId = event.params.userId
+export async function onWriteUnread(data: DataSnapshot, context) {
+  if (!context.params) { return }
+  const userId = context.params.userId
   const countRef = shared.database.ref(`/counters/${userId}/unreads`)
 
   try {
     await countRef.transaction((current) => {
-      if (shared.getAction(event) === Action.create) {
-        return (current || 0) + 1
-      } else if (shared.getAction(event) === Action.delete) {
-        return (current || 0) - 1
-      }
+      return (current || 0) + 1
     })
   } catch (err) {
     console.error(`Error changing unread count: ${err.message}`)
   }
 }
 
-export async function onWriteUnreadsCounter(event: shared.DatabaseEvent) {
-  if (shared.getAction(event) !== Action.delete) { return }
-  if (!event.params) { return }
-  const userId = event.params.userId
+export async function onDeleteUnread(data: DataSnapshot, context) {
+  if (!context.params) { return }
+  const userId = context.params.userId
+  const countRef = shared.database.ref(`/counters/${userId}/unreads`)
+
+  try {
+    await countRef.transaction((current) => {
+      return (current || 0) - 1
+    })
+  } catch (err) {
+    console.error(`Error changing unread count: ${err.message}`)
+  }
+}
+
+export async function onWriteUnreadsCounter(data: DataSnapshot, context) {
+  if (data.exists()) { return }
+  if (!context.params) { return }
+  const userId = context.params.userId
   const countRef = shared.database.ref(`/counters/${userId}/unreads`)
   const unreadsRef = shared.database.ref(`/unreads/${userId}`)
 

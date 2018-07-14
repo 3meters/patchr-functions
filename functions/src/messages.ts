@@ -5,23 +5,23 @@ import * as notifications from './notifications'
 import * as shared from './shared'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
-type DeltaSnapshot = shared.DeltaSnapshot
+type Change = shared.Change
 
-export async function onWriteMessage(event: shared.DatabaseEvent) {
-  if (shared.getAction(event) === Action.create) {
-    await created(event.data.current)
-  } else if (shared.getAction(event) === Action.delete) {
-    await deleted(event.data.previous)
-  } else if (shared.getAction(event) === Action.change) {
-    await updated(event.data.previous, event.data.current)
+export async function onWriteMessage(data: Change, context) {
+  if (shared.getAction(data) === Action.create) {
+    await created(data.after)
+  } else if (shared.getAction(data) === Action.delete) {
+    await deleted(data.before)
+  } else if (shared.getAction(data) === Action.change) {
+    await updated(data.before, data.after)
   }
 }
 
-async function created(current: shared.DeltaSnapshot) {
+async function created(data: DataSnapshot) {
 
-  const message = current.val()
-  const messageRef = current.adminRef
-  const messageId: string = current.key
+  const message = data.val()
+  const messageRef = data.ref
+  const messageId: string = data.key || ''
   const channelId: string = message.channel_id
   const createdBy: string = message.created_by
   
@@ -81,7 +81,7 @@ async function created(current: shared.DeltaSnapshot) {
 
     const username: string = (await shared.getUser(createdBy)).val().username
     const channelName: string = (await shared.getChannel(channelId)).val().name
-    const data = {
+    const payload = {
       user_id: createdBy,
       channel_id: channelId,
       message_id: messageId,
@@ -100,7 +100,7 @@ async function created(current: shared.DeltaSnapshot) {
       else if (message.text) {
         notificationText = `#${channelName} @${username}: ${message.text}`
       }
-      await notifications.sendMessages(installs.en, notificationText, data)
+      await notifications.sendMessages(installs.en, notificationText, payload)
     }
 
     /* Russian */
@@ -115,7 +115,7 @@ async function created(current: shared.DeltaSnapshot) {
       else if (message.text) {
         notificationText = `#${channelName} @${username}: ${message.text}`
       }
-      await notifications.sendMessages(installs.ru, notificationText, data)
+      await notifications.sendMessages(installs.ru, notificationText, payload)
     }
   } 
   catch (err) {
@@ -124,25 +124,25 @@ async function created(current: shared.DeltaSnapshot) {
   }
 }
 
-async function updated(previous: DeltaSnapshot, current: DeltaSnapshot) {
-  const messageId: string = current.key
-  const channelId: string = current.val().channel_id
-  const previousPhoto: any = shared.getPhotoFromMessage(previous.val())
-  const currentPhoto: any = shared.getPhotoFromMessage(current.val())
+async function updated(before: DataSnapshot, after: DataSnapshot) {
+  const messageId: string | null = after.key
+  const channelId: string = after.val().channel_id
+  const photoBefore: any = shared.getPhotoFromMessage(before.val())
+  const photoAfter: any = shared.getPhotoFromMessage(after.val())
 
-  if (previousPhoto) {
-    if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
-      if (previousPhoto.source === 'google-storage') {
-        console.log(`Deleting image file: ${previousPhoto.filename}`)
-        await shared.deleteImageFile(previousPhoto.filename)
+  if (photoBefore) {
+    if (!photoAfter || photoAfter.filename !== photoBefore.filename) {
+      if (photoBefore.source === 'google-storage') {
+        console.log(`Deleting image file: ${photoBefore.filename}`)
+        await shared.deleteImageFile(photoBefore.filename)
       }
     }
   }
 }
 
-async function deleted(previous: DeltaSnapshot) {
+async function deleted(previous: DataSnapshot) {
   const channelId: string =  previous.val().channel_id
-  const messageId: string = previous.key
+  const messageId: string | null = previous.key
   const photo: any = shared.getPhotoFromMessage(previous.val())
   console.log(`Message deleted: ${messageId} for: ${channelId}`)
 

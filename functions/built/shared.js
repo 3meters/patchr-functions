@@ -12,16 +12,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Common database functions
  */
 const admin = require("firebase-admin");
-const functions = require("firebase-functions");
 const slugifyjs = require("slugify");
-admin.initializeApp(functions.config().firebase);
+admin.initializeApp();
 exports.messaging = admin.messaging();
 exports.database = admin.database();
 exports.auth = admin.auth();
 // tslint:disable-next-line:no-var-requires
 const gcs = require('@google-cloud/storage')();
 function slugify(title) {
-    return slugifyjs(title).toLowerCase();
+    const slugified = slugifyjs.default(title);
+    return slugified.toLowerCase();
 }
 exports.slugify = slugify;
 function getMemberIds(channelId) {
@@ -145,11 +145,11 @@ function getPhotoFromMessage(message) {
     }
 }
 exports.getPhotoFromMessage = getPhotoFromMessage;
-function getAction(event) {
-    if (!event.data.exists()) {
+function getAction(change) {
+    if (!change.after.exists()) {
         return Action.delete;
     }
-    else if (!event.data.previous.exists()) {
+    else if (!change.before.exists()) {
         return Action.create;
     }
     else {

@@ -7,7 +7,6 @@ import * as shared from './shared'
 type Response = admin.messaging.MessagingDevicesResponse
 type Payload = admin.messaging.MessagingPayload
 type DataPayload = admin.messaging.DataMessagePayload
-type MessagePayload = admin.messaging.NotificationMessagePayload
 type Options = admin.messaging.MessagingOptions
 
 export async function sendMessages(installs: any[], message: string, payloadData: DataPayload) {
@@ -35,13 +34,14 @@ export async function sendMessages(installs: any[], message: string, payloadData
       if (result.error) {
         /* Cleanup the tokens who are not registered anymore. */
         if (result.error.code === 'messaging/invalid-registration-token' ||
+          result.error.code === 'messaging/mismatched-credential' ||
           result.error.code === 'messaging/registration-token-not-registered') {
           console.log(`Removing orphaned install for user: ${userId}: ${token}`)
           tokensToRemove.push(shared.database.ref(`installs/${userId}/${token}`).remove())
         }
       }      
     }
-    Promise.all(tokensToRemove)
+    await Promise.all(tokensToRemove)
   }
 }
 

@@ -12,12 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Message processing
  */
 const shared = require("./shared");
-const Action = shared.Action;
-function onWriteReaction(event) {
+function onWriteReaction(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (shared.getAction(event) === Action.create) {
-            yield log(event.params, event.data);
-        }
+        yield log(context.params, data);
     });
 }
 exports.onWriteReaction = onWriteReaction;

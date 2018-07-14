@@ -12,9 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * User processing
  */
 const shared = require("./shared");
-function onDeleteAccount(event) {
+function onDeleteAccount(user, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const user = event.data;
         const userId = user.uid;
         const ownedChannelIds = yield shared.getOwnedChannelIds(userId);
         const memberChannelIds = yield shared.getMemberChannelIds(userId);

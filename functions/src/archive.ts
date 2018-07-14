@@ -60,7 +60,7 @@ function startTaskListeners() {
         errorTask(task, err)
         return
       }
-      finishTask(task)
+      finishTask(task, true)
     })
   })
   admin.database().ref('queue/create-user').on('child_added', function(snap) {
@@ -239,7 +239,7 @@ function processDelete(task) {
         return
       }
       console.log(`Channel deleted: ${task.channel_id} for group: ${task.group_id}`)
-      finishTask(task)
+      finishTask(task, true)
     })
   }
   else if (task.target === 'group') {
@@ -498,11 +498,8 @@ function processInvite(task) {
       invited_at_desc: timestamp * -1,
       status: "pending",
     }
-    if (task.channels) {
-      invite.channels = task.channels
-    }
     admin.database().ref(`invites/${groupId}/${inviterId}/${inviteId}`).set(invite)
-    finishTask(task)
+    finishTask(task, true)
   }
 }
 
@@ -712,7 +709,7 @@ function processNotification(task) {
       if (pushs.length === 0) {
         console.log('Channel members: none to notify')
         console.log('Notification processing stopped')
-        finishTask(task)
+        finishTask(task, true)
         return
       }
     })
@@ -824,29 +821,27 @@ function processNotification(task) {
       bodyValue = `#${task.channelName} @${task.username}: ${task.text}`
     }
 
-    var payload = {}
-
-    payload.notification = {
-      body: bodyValue,
-      sound: 'chirp.caf'
+    var payload = {
+      notification : {
+        body: bodyValue,
+        sound: 'chirp.caf'
+      },
+      data : {
+        user_id: task.created_by,
+        group_id: groupId,
+        channel_id: channelId,
+        message_id: messageId
+      },
+      content_available : true
     }
-
-    payload.data = {
-      user_id: task.created_by,
-      group_id: groupId,
-      channel_id: channelId,
-      message_id: messageId,
-    }
-
-    payload.content_available = true
 
     console.log(`Notification: ${JSON.stringify(payload.notification)}`)
 
     async.each(installs,
       function(install, next) {
-        payload.to = install.id
-        payload.notification.badge = install.unreads
-        console.log(`Install: ${payload.to}, unread: ${payload.notification.badge}`)
+        payload['to'] = install.id
+        payload.notification['badge'] = install.unreads
+        console.log(`Install: ${payload['to']}, unread: ${payload.notification['badge']}`)
         var req = https.request(params, function(res) {
           console.log('Provider: status code', res.statusCode)
           if (res.statusCode === 400) {
@@ -878,7 +873,7 @@ function processNotification(task) {
           errorTask(task, err)
           return
         }
-        finishTask(task)
+        finishTask(task, true)
       }
     )
   }
@@ -917,7 +912,7 @@ function groupMemberMap(userId, timestamp, priorityIndex, role, email) {
   }
 
   if (email) {
-    membership.email = email
+    membership['email'] = email
   }
 
   return membership
@@ -964,7 +959,7 @@ function startTask(task) {
 
 function errorTask(task, error) {
   admin.database().ref(`${task.path}/error`).set(error)
-  finishTask(task)
+  finishTask(task, true)
 }
 
 function finishTask(task, result) {

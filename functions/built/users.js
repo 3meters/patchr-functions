@@ -13,56 +13,63 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const shared = require("./shared");
 const Action = shared.Action;
-function onWriteProfile(event) {
+function onUpdateProfile(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!event.params) {
+        if (!context.params) {
             return;
         }
-        if (shared.getAction(event) === Action.delete) {
-            yield deletedProfile(event.params.userId, event.data.previous);
-        }
-        else if (shared.getAction(event) === Action.change) {
-            yield updatedProfile(event.params.userId, event.data.previous, event.data.current);
-        }
+        yield updatedProfile(context.params.userId, data.before, data.after);
     });
 }
-exports.onWriteProfile = onWriteProfile;
-function onWriteUsername(event) {
+exports.onUpdateProfile = onUpdateProfile;
+function onDeleteProfile(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!event.params) {
+        if (!context.params) {
             return;
         }
-        if (shared.getAction(event) === Action.create) {
-            yield createdUsername(event.params.userId, event.data.current);
+        yield deletedProfile(context.params.userId, data);
+    });
+}
+exports.onDeleteProfile = onDeleteProfile;
+function onWriteUsername(data, context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!context.params) {
+            return;
         }
-        else if (shared.getAction(event) === Action.delete) {
-            yield deletedUsername(event.params.userId, event.data.previous);
+        if (shared.getAction(data) === Action.create) {
+            yield createdUsername(context.params.userId, data.after);
         }
-        else if (shared.getAction(event) === Action.change) {
-            yield updatedUsername(event.params.userId, event.data.previous, event.data.current);
+        else if (shared.getAction(data) === Action.delete) {
+            yield deletedUsername(context.params.userId, data.before);
+        }
+        else if (shared.getAction(data) === Action.change) {
+            yield updatedUsername(context.params.userId, data.before, data.after);
         }
     });
 }
 exports.onWriteUsername = onWriteUsername;
 /* Profile */
-function updatedProfile(userId, previous, current) {
+function updatedProfile(userId, before, after) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(`Profile updated: ${userId}`);
         /* Delete previous image file if needed */
-        if (current.child('profile/photo/filename').changed()) {
-            const previousPhoto = previous.val().photo;
-            if (previousPhoto && previousPhoto.source === 'google-storage') {
-                console.log(`Deleting image file: ${previousPhoto.filename}`);
-                yield shared.deleteImageFile(previousPhoto.filename);
+        const photoBefore = before.val().photo;
+        const photoAfter = after.val().photo;
+        if (photoBefore) {
+            if (!photoAfter || photoAfter.filename !== photoBefore.filename) {
+                if (photoBefore.source === 'google-storage') {
+                    console.log(`Deleting image file: ${photoBefore.filename}`);
+                    yield shared.deleteImageFile(photoBefore.filename);
+                }
             }
         }
     });
 }
-function deletedProfile(userId, previous) {
+function deletedProfile(userId, before) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(`Profile deleted: ${userId}`);
         /* Delete image file if needed */
-        const photo = previous.val().photo;
+        const photo = before.val().photo;
         if (photo && photo.source === 'google-storage') {
             console.log(`Deleting image file: ${photo.filename}`);
             yield shared.deleteImageFile(photo.filename);

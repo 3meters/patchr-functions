@@ -32,13 +32,14 @@ function sendMessages(installs, message, payloadData) {
                 if (result.error) {
                     /* Cleanup the tokens who are not registered anymore. */
                     if (result.error.code === 'messaging/invalid-registration-token' ||
+                        result.error.code === 'messaging/mismatched-credential' ||
                         result.error.code === 'messaging/registration-token-not-registered') {
                         console.log(`Removing orphaned install for user: ${userId}: ${token}`);
                         tokensToRemove.push(shared.database.ref(`installs/${userId}/${token}`).remove());
                     }
                 }
             }
-            Promise.all(tokensToRemove);
+            yield Promise.all(tokensToRemove);
         }
     });
 }

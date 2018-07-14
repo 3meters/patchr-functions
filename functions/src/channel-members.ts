@@ -4,23 +4,23 @@
 import * as shared from './shared'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
-type DeltaSnapshot = shared.DeltaSnapshot
+type Change = shared.Change
 
-export async function onWriteMember(event: shared.DatabaseEvent) {
-  if (!event.params) { return }
-  if (shared.getAction(event) === Action.create) {
-    await created(event.params, event.data.current)
-    await log(Action.create, event.params, event.data.previous, event.data.current)
-  } else if (shared.getAction(event) === Action.delete) {
-    await deleted(event.params, event.data.previous)
-    await log(Action.delete, event.params, event.data.previous, event.data.current)
-  } else if (shared.getAction(event) === Action.change) {
-    await updated(event.params, event.data.previous, event.data.current)
-    await log(Action.change, event.params, event.data.previous, event.data.current)
+export async function onWriteMember(data: Change, context) {
+  if (!context.params) { return }
+  if (shared.getAction(data) === Action.create) {
+    await created(context.params, data.after)
+    await log(Action.create, context.params, data.before, data.after)
+  } else if (shared.getAction(data) === Action.delete) {
+    await deleted(context.params, data.before)
+    await log(Action.delete, context.params, data.before, data.after)
+  } else if (shared.getAction(data) === Action.change) {
+    await updated(context.params, data.before, data.after)
+    await log(Action.change, context.params, data.before, data.after)
   }
 }
 
-async function created(params: any, current: shared.DeltaSnapshot) {
+async function created(params: any, current: DataSnapshot) {
   const membership = current.val()
   console.log(`Member: ${params.userId} added to channel: ${params.channelId}`)
   try {
@@ -31,7 +31,7 @@ async function created(params: any, current: shared.DeltaSnapshot) {
   }
 }
 
-async function updated(params: any, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updated(params: any, previous: DataSnapshot, current: DataSnapshot) {
   const membership = current.val()
   try {
     await shared.database.ref(`member-channels/${params.userId}/${params.channelId}`).set(membership)
@@ -41,7 +41,7 @@ async function updated(params: any, previous: DeltaSnapshot, current: DeltaSnaps
   }
 }
 
-async function deleted(params: any, previous: DeltaSnapshot) {
+async function deleted(params: any, previous: DataSnapshot) {
   console.log(`Member: ${params.userId} removed from channel: ${params.channelId}`)
   const updates = {}
   updates[`member-channels/${params.userId}/${params.channelId}`] = null // No trigger
@@ -54,7 +54,7 @@ async function deleted(params: any, previous: DeltaSnapshot) {
   }
 }
 
-async function log(action: any, params: any, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function log(action: any, params: any, previous: DataSnapshot, current: DataSnapshot) {
 
   /* Gather channel members */
   const channelId = params.channelId

@@ -1,25 +1,21 @@
 /*
  * Invite processing
  */
-import * as _ from 'lodash'
 import { mail as helper } from 'sendgrid'
 import * as shared from './shared'
 type DataSnapshot = shared.DataSnapshot
-const Action = shared.Action
 const SENDGRID_API_KEY = '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'
 
-export async function onWriteInvite(event: shared.DatabaseEvent) {
-  if (!event.params) { return }
-  if (shared.getAction(event) === Action.create) {
-    await created(event.data.current)
-  }
+export async function onWriteInvite(data: DataSnapshot, context) {
+  if (!context.params) { return }
+  await created(data)
 }
 
-async function created(current: shared.DeltaSnapshot) {
-  const invite = current.val()
-  console.log(`Invite created: ${current.key} by: ${invite.inviter.id} for: ${invite.email}`)
+async function created(data: DataSnapshot) {
+  const invite = data.val()
+  console.log(`Invite created: ${data.key} by: ${invite.inviter.id} for: ${invite.email}`)
   try {
-    invite.id = current.key
+    invite.id = data.key
     await sendInviteEmail(invite)
     await log(invite)
   } catch (err) {

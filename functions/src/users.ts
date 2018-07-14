@@ -2,49 +2,53 @@
  * User processing
  */
 import * as shared from './shared'
-import * as utils from './utils'
 const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
-type DeltaSnapshot = shared.DeltaSnapshot
+type Change = shared.Change
 
-export async function onWriteProfile(event: shared.DatabaseEvent) {
-  if (!event.params) { return }
-  if (shared.getAction(event) === Action.delete) {
-    await deletedProfile(event.params.userId, event.data.previous)
-  } else if (shared.getAction(event) === Action.change) {
-    await updatedProfile(event.params.userId, event.data.previous, event.data.current)
-  }
+export async function onUpdateProfile(data: Change, context) {
+  if (!context.params) { return }
+  await updatedProfile(context.params.userId, data.before, data.after)
 }
 
-export async function onWriteUsername(event: shared.DatabaseEvent) {
-  if (!event.params) { return }
-  if (shared.getAction(event) === Action.create) {
-    await createdUsername(event.params.userId, event.data.current)
-  } else if (shared.getAction(event) === Action.delete) {
-    await deletedUsername(event.params.userId, event.data.previous)
-  } else if (shared.getAction(event) === Action.change) {
-    await updatedUsername(event.params.userId, event.data.previous, event.data.current)
+export async function onDeleteProfile(data: DataSnapshot, context) {
+  if (!context.params) { return }
+  await deletedProfile(context.params.userId, data)
+}
+
+export async function onWriteUsername(data: Change, context) {
+  if (!context.params) { return }
+  if (shared.getAction(data) === Action.create) {
+    await createdUsername(context.params.userId, data.after)
+  } else if (shared.getAction(data) === Action.delete) {
+    await deletedUsername(context.params.userId, data.before)
+  } else if (shared.getAction(data) === Action.change) {
+    await updatedUsername(context.params.userId, data.before, data.after)
   }
 }
 
 /* Profile */
 
-async function updatedProfile(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updatedProfile(userId: string, before: DataSnapshot, after: DataSnapshot) {
   console.log(`Profile updated: ${userId}`)
   /* Delete previous image file if needed */
-  if (current.child('profile/photo/filename').changed()) {
-    const previousPhoto = previous.val().photo
-    if (previousPhoto && previousPhoto.source === 'google-storage') {
-      console.log(`Deleting image file: ${previousPhoto.filename}`)
-      await shared.deleteImageFile(previousPhoto.filename)
+
+  const photoBefore: any = before.val().photo
+  const photoAfter: any = after.val().photo
+  if (photoBefore) {
+    if (!photoAfter || photoAfter.filename !== photoBefore.filename) {
+      if (photoBefore.source === 'google-storage') {
+        console.log(`Deleting image file: ${photoBefore.filename}`)
+        await shared.deleteImageFile(photoBefore.filename)
+      }
     }
   }
 }
 
-async function deletedProfile(userId: string, previous: DeltaSnapshot) {
+async function deletedProfile(userId: string, before: DataSnapshot) {
   console.log(`Profile deleted: ${userId}`)
   /* Delete image file if needed */
-  const photo: any = previous.val().photo
+  const photo: any = before.val().photo
   if (photo && photo.source === 'google-storage') {
     console.log(`Deleting image file: ${photo.filename}`)
     await shared.deleteImageFile(photo.filename)
@@ -53,7 +57,7 @@ async function deletedProfile(userId: string, previous: DeltaSnapshot) {
 
 /* Username */
 
-async function createdUsername(userId: string, current: DeltaSnapshot) {
+async function createdUsername(userId: string, current: DataSnapshot) {
   const updates = {}
   const username = current.val()
   console.log(`Claiming username: ${username}`)
@@ -61,7 +65,7 @@ async function createdUsername(userId: string, current: DeltaSnapshot) {
   await shared.database.ref().update(updates)
 }
 
-async function updatedUsername(userId: string, previous: DeltaSnapshot, current: DeltaSnapshot) {
+async function updatedUsername(userId: string, previous: DataSnapshot, current: DataSnapshot) {
   /* Release old username and claim new one */
   const previousUsername: string = previous.val()
   const currentUsername: string = current.val()
@@ -72,7 +76,7 @@ async function updatedUsername(userId: string, previous: DeltaSnapshot, current:
   await shared.database.ref().update(update)
 }
 
-async function deletedUsername(userId: string, previous: DeltaSnapshot) {
+async function deletedUsername(userId: string, previous: DataSnapshot) {
   const updates = {}
   console.log(`Releasing username: ${previous.val()}`)
   updates[`usernames/${previous.val()}`] = null

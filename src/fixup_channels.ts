@@ -1,4 +1,3 @@
-import * as async from 'async'
 import * as admin from 'firebase-admin'
 import * as fs from 'fs'
 import * as _ from 'lodash'

@@ -8,27 +8,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/*
+ * Invite processing
+ */
 const sendgrid_1 = require("sendgrid");
 const shared = require("./shared");
-const Action = shared.Action;
 const SENDGRID_API_KEY = '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';
-function onWriteInvite(event) {
+function onWriteInvite(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!event.params) {
+        if (!context.params) {
             return;
         }
-        if (shared.getAction(event) === Action.create) {
-            yield created(event.data.current);
-        }
+        yield created(data);
     });
 }
 exports.onWriteInvite = onWriteInvite;
-function created(current) {
+function created(data) {
     return __awaiter(this, void 0, void 0, function* () {
-        const invite = current.val();
-        console.log(`Invite created: ${current.key} by: ${invite.inviter.id} for: ${invite.email}`);
+        const invite = data.val();
+        console.log(`Invite created: ${data.key} by: ${invite.inviter.id} for: ${invite.email}`);
         try {
-            invite.id = current.key;
+            invite.id = data.key;
             yield sendInviteEmail(invite);
             yield log(invite);
         }

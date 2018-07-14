@@ -14,25 +14,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const notifications = require("./notifications");
 const shared = require("./shared");
 const Action = shared.Action;
-function onWriteMessage(event) {
+function onWriteMessage(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (shared.getAction(event) === Action.create) {
-            yield created(event.data.current);
+        if (shared.getAction(data) === Action.create) {
+            yield created(data.after);
         }
-        else if (shared.getAction(event) === Action.delete) {
-            yield deleted(event.data.previous);
+        else if (shared.getAction(data) === Action.delete) {
+            yield deleted(data.before);
         }
-        else if (shared.getAction(event) === Action.change) {
-            yield updated(event.data.previous, event.data.current);
+        else if (shared.getAction(data) === Action.change) {
+            yield updated(data.before, data.after);
         }
     });
 }
 exports.onWriteMessage = onWriteMessage;
-function created(current) {
+function created(data) {
     return __awaiter(this, void 0, void 0, function* () {
-        const message = current.val();
-        const messageRef = current.adminRef;
-        const messageId = current.key;
+        const message = data.val();
+        const messageRef = data.ref;
+        const messageId = data.key || '';
         const channelId = message.channel_id;
         const createdBy = message.created_by;
         if (message.moving) {
@@ -88,7 +88,7 @@ function created(current) {
             }
             const username = (yield shared.getUser(createdBy)).val().username;
             const channelName = (yield shared.getChannel(channelId)).val().name;
-            const data = {
+            const payload = {
                 user_id: createdBy,
                 channel_id: channelId,
                 message_id: messageId,
@@ -106,7 +106,7 @@ function created(current) {
                 else if (message.text) {
                     notificationText = `#${channelName} @${username}: ${message.text}`;
                 }
-                yield notifications.sendMessages(installs.en, notificationText, data);
+                yield notifications.sendMessages(installs.en, notificationText, payload);
             }
             /* Russian */
             if (installs.ru.length > 0) {
@@ -120,7 +120,7 @@ function created(current) {
                 else if (message.text) {
                     notificationText = `#${channelName} @${username}: ${message.text}`;
                 }
-                yield notifications.sendMessages(installs.ru, notificationText, data);
+                yield notifications.sendMessages(installs.ru, notificationText, payload);
             }
         }
         catch (err) {
@@ -129,17 +129,17 @@ function created(current) {
         }
     });
 }
-function updated(previous, current) {
+function updated(before, after) {
     return __awaiter(this, void 0, void 0, function* () {
-        const messageId = current.key;
-        const channelId = current.val().channel_id;
-        const previousPhoto = shared.getPhotoFromMessage(previous.val());
-        const currentPhoto = shared.getPhotoFromMessage(current.val());
-        if (previousPhoto) {
-            if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
-                if (previousPhoto.source === 'google-storage') {
-                    console.log(`Deleting image file: ${previousPhoto.filename}`);
-                    yield shared.deleteImageFile(previousPhoto.filename);
+        const messageId = after.key;
+        const channelId = after.val().channel_id;
+        const photoBefore = shared.getPhotoFromMessage(before.val());
+        const photoAfter = shared.getPhotoFromMessage(after.val());
+        if (photoBefore) {
+            if (!photoAfter || photoAfter.filename !== photoBefore.filename) {
+                if (photoBefore.source === 'google-storage') {
+                    console.log(`Deleting image file: ${photoBefore.filename}`);
+                    yield shared.deleteImageFile(photoBefore.filename);
                 }
             }
         }

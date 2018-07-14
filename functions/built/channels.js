@@ -15,19 +15,19 @@ const shared = require("./shared");
 const Action = shared.Action;
 let memberIds;
 let channelName;
-function onWriteChannel(event) {
+function onWriteChannel(data, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (shared.getAction(event) === Action.create) {
-            yield created(event.data.current);
-            yield log(Action.create, event.params, event.data);
+        if (shared.getAction(data) === Action.create) {
+            yield created(data.after);
+            yield log(Action.create, context.params, data);
         }
-        else if (shared.getAction(event) === Action.change) {
-            yield updated(event.data.previous, event.data.current);
-            yield log(Action.change, event.params, event.data);
+        else if (shared.getAction(data) === Action.change) {
+            yield updated(data.before, data.after);
+            yield log(Action.change, context.params, data);
         }
-        else if (shared.getAction(event) === Action.delete) {
-            yield deleted(event.data.previous);
-            yield log(Action.delete, event.params, event.data);
+        else if (shared.getAction(data) === Action.delete) {
+            yield deleted(data.before);
+            yield log(Action.delete, context.params, data);
         }
     });
 }
@@ -48,34 +48,34 @@ function created(current) {
         yield shared.database.ref().update(updates);
     });
 }
-function updated(previous, current) {
+function updated(before, current) {
     return __awaiter(this, void 0, void 0, function* () {
         const channelId = current.key;
-        const previousPhoto = previous.val().photo;
-        const currentPhoto = current.val().photo;
-        if (current.child('title').changed()) {
+        const photoBefore = before.val().photo;
+        const photoAfter = current.val().photo;
+        if (current.child('title') !== before.child('title')) {
             const slug = shared.slugify(current.val().title); // converts all intl chars to url legal chars
             const updates = {};
             updates[`channels/${channelId}/name`] = slug.toLowerCase();
             yield shared.database.ref().update(updates);
         }
-        if (previousPhoto) {
-            if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
-                if (previousPhoto.source === 'google-storage') {
-                    console.log(`Deleting image file: ${previousPhoto.filename}`);
-                    yield shared.deleteImageFile(previousPhoto.filename);
+        if (photoBefore) {
+            if (!photoAfter || photoBefore.filename !== photoAfter.filename) {
+                if (photoBefore.source === 'google-storage') {
+                    console.log(`Deleting image file: ${photoBefore.filename}`);
+                    yield shared.deleteImageFile(photoBefore.filename);
                 }
             }
         }
     });
 }
-function deleted(previous) {
+function deleted(before) {
     return __awaiter(this, void 0, void 0, function* () {
-        const channelId = previous.key;
-        const photo = previous.val().photo;
+        const channelId = before.key;
+        const photo = before.val().photo;
         const updates = {};
-        channelName = previous.val().name;
-        console.log(`Channel deleted: ${channelId}`, previous.val().name);
+        channelName = before.val().name;
+        console.log(`Channel deleted: ${channelId}`, before.val().name);
         /* Gather list of channel members */
         memberIds = yield shared.getMemberIds(channelId);
         for (const memberId of memberIds) {
@@ -100,11 +100,11 @@ function log(action, params, snapshot) {
         /* Gather channel members */
         const channelId = params.channelId;
         let userId = '';
-        if (snapshot.exists()) {
-            userId = snapshot.val().owned_by;
+        if (snapshot.after.exists()) {
+            userId = snapshot.after.val().owned_by;
         }
-        else if (snapshot.previous.exists()) {
-            userId = snapshot.previous.val().owned_by;
+        else if (snapshot.before.exists()) {
+            userId = snapshot.before.val().owned_by;
         }
         if (!memberIds) {
             memberIds = yield shared.getMemberIds(channelId);
@@ -133,8 +133,8 @@ function log(action, params, snapshot) {
                 activity.text = `#${channelName} @${username}: created scrapbook.`;
             }
             else if (action === Action.change) {
-                const previousPhoto = snapshot.previous.val().photo;
-                const currentPhoto = snapshot.val().photo;
+                const previousPhoto = snapshot.before.val().photo;
+                const currentPhoto = snapshot.after.val().photo;
                 if (previousPhoto) {
                     if (!currentPhoto || previousPhoto.filename !== currentPhoto.filename) {
                         activity.text = `#${channelName} @${username}: changed cover photo.`;
@@ -145,7 +145,7 @@ function log(action, params, snapshot) {
                 }
             }
             else if (action === Action.delete) {
-                memberIds = [snapshot.previous.val().owned_by];
+                memberIds = [snapshot.before.val().owned_by];
                 activity.text = `#${channelName} @${username}: deleted scrapbook.`;
             }
             if (activity.text !== 'empty') {

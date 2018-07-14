@@ -3,17 +3,14 @@
  */
 import * as admin from 'firebase-admin'
 import * as functions from 'firebase-functions'
-import * as _ from 'lodash'
 import * as slugifyjs from 'slugify'
 
-admin.initializeApp(functions.config().firebase)
+admin.initializeApp()
 
 export type Database = admin.database.Database
 export type DataSnapshot = admin.database.DataSnapshot
-export type DeltaSnapshot = functions.database.DeltaSnapshot
 export type UserRecord = admin.auth.UserRecord
-export type DatabaseEvent = functions.Event < DeltaSnapshot >
-export type AuthEvent = functions.Event < UserRecord >
+export type Change = functions.Change<DataSnapshot>
 
 export const messaging: admin.messaging.Messaging = admin.messaging()
 export const database: admin.database.Database = admin.database()
@@ -23,7 +20,8 @@ export const auth: admin.auth.Auth = admin.auth()
 const gcs = require('@google-cloud/storage')()
 
 export function slugify(title: string) {
-  return slugifyjs(title).toLowerCase()
+  const slugified = slugifyjs.default(title)
+  return slugified.toLowerCase()
 }
 
 export async function getMemberIds(channelId: string | null) {
@@ -123,10 +121,10 @@ export function getPhotoFromMessage(message: any) {
   }
 }
 
-export function getAction(event: DatabaseEvent): Action {
-  if (!event.data.exists()) {
+export function getAction(change: Change): Action {
+  if (!change.after.exists()) {
     return Action.delete
-  } else if (!event.data.previous.exists()) {
+  } else if (!change.before.exists()) {
     return Action.create
   } else {
     return Action.change

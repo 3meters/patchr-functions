@@ -2,18 +2,14 @@
  * Message processing
  */
 import * as shared from './shared'
-const Action = shared.Action
 type DataSnapshot = shared.DataSnapshot
-type DeltaSnapshot = shared.DeltaSnapshot
 
-export async function onWriteReaction(event: shared.DatabaseEvent) {
-  if (shared.getAction(event) === Action.create) {
-    await log(event.params, event.data)
-  }
+export async function onWriteReaction(data: DataSnapshot, context) {
+  await log(context.params, data)
 }
 
-async function log(params: any, snapshot: DeltaSnapshot) {
-    console.log('snapshot', snapshot)
+async function log(params: any, snapshot: DataSnapshot) {
+  console.log('snapshot', snapshot)
   /* Gather channel members */
   const channelId = params.channelId
   const messageId = params.messageId

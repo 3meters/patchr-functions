@@ -22,64 +22,64 @@ const users = require("./users");
 exports.onWriteMessage = functions
     .database
     .ref('/channel-messages/{channelId}/{messageId}')
-    .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield messages.onWriteMessage(event); }));
+    .onWrite((data, context) => __awaiter(this, void 0, void 0, function* () { return yield messages.onWriteMessage(data, context); }));
 exports.onWriteChannel = functions
     .database
     .ref('/channels/{channelId}')
-    .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield channels.onWriteChannel(event); }));
+    .onWrite((data, context) => __awaiter(this, void 0, void 0, function* () { return yield channels.onWriteChannel(data, context); }));
 exports.onCreateComment = functions
     .database
     .ref('/channel-messages/{channelId}/{messageId}/comments/{commentId}')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(event); }));
+    .onCreate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield comments.onWriteComment(data, context); }));
 exports.onCreateReaction = functions
     .database
     .ref('/channel-messages/{channelId}/{messageId}/reactions/{reactionId}')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield reactions.onWriteReaction(event); }));
+    .onCreate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield reactions.onWriteReaction(data, context); }));
 exports.onCreateMessageUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}/message')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+    .onCreate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(data, context); }));
 exports.onDeleteMessageUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}/message')
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+    .onDelete((data, context) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onDeleteUnread(data, context); }));
 exports.onCreateCommentUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+    .onCreate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(data, context); }));
 exports.onDeleteCommentUnread = functions
     .database
     .ref('/unreads/{userId}/{channelId}/{messageId}/comments')
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnread(event); }));
+    .onDelete((data, context) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onDeleteUnread(data, context); }));
 exports.onCreateInvite = functions
     .database
     .ref('/invites/{inviteId}')
-    .onCreate((event) => __awaiter(this, void 0, void 0, function* () { return yield invites.onWriteInvite(event); }));
+    .onCreate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield invites.onWriteInvite(data, context); }));
 /* Membership */
 exports.onWriteChannelMember = functions
     .database
     .ref('/channel-members/{channelId}/{userId}')
-    .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield channel_members.onWriteMember(event); }));
+    .onWrite((data, context) => __awaiter(this, void 0, void 0, function* () { return yield channel_members.onWriteMember(data, context); }));
 /* Properties */
 exports.onUpdateProfile = functions
     .database
     .ref('/users/{userId}/profile')
-    .onUpdate((event) => __awaiter(this, void 0, void 0, function* () { return yield users.onWriteProfile(event); }));
+    .onUpdate((data, context) => __awaiter(this, void 0, void 0, function* () { return yield users.onUpdateProfile(data, context); }));
 exports.onDeleteProfile = functions
     .database
     .ref('/users/{userId}/profile')
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield users.onWriteProfile(event); }));
+    .onDelete((data, context) => __awaiter(this, void 0, void 0, function* () { return yield users.onDeleteProfile(data, context); }));
 exports.onWriteUsername = functions
     .database
     .ref('/users/{userId}/username')
-    .onWrite((event) => __awaiter(this, void 0, void 0, function* () { return yield users.onWriteUsername(event); }));
+    .onWrite((data, context) => __awaiter(this, void 0, void 0, function* () { return yield users.onWriteUsername(data, context); }));
 exports.onDeleteUnreadsCounter = functions
     .database
     .ref('/counters/{userId}/unreads')
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnreadsCounter(event); }));
+    .onDelete((data, context) => __awaiter(this, void 0, void 0, function* () { return yield unreads.onWriteUnreadsCounter(data, context); }));
 /* Auth accounts */
 exports.onDeleteAccount = functions
     .auth
     .user()
-    .onDelete((event) => __awaiter(this, void 0, void 0, function* () { return yield accounts.onDeleteAccount(event); }));
+    .onDelete((user, context) => __awaiter(this, void 0, void 0, function* () { return yield accounts.onDeleteAccount(user, context); }));
 //# sourceMappingURL=index.js.map
